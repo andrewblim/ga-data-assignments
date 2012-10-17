@@ -95,7 +95,7 @@ def card_draw(num_cards, n, deck, csv_filename=None, hist_filename=None):
 # helper functions for problem 5 - strength of poker hands
 
 def is_straight_flush(hand):
-    if isFlush(hand) and isStraight(hand): return True
+    if is_flush(hand) and is_straight(hand): return True
     else: return False
 
 def is_quads(hand):
@@ -356,24 +356,98 @@ def bank_flows(loan_freq, loan_size, tenor, interest_rate, default_prob, n,
         tick_params(labelsize='x-small')
         plot(range(n), obs['cumulative_cash_flow'])
         xlabel('time')
-        ylabel('cash flow')
+        ylabel('cumulative cash flow')
         savefig(hist_filename)
         close()
+    
+    return obs
 
-# problem 12 - custom ()
+# problem 12 - custom - baseball runs
+# Sports stats are a side interest of mine. Calculate runs scored in an inning
+# of baseball given a very simplified model of a baseball game where you supply
+# the following parameters:
+#  - prob of single, double, triple, and HR - all else considered strikeouts
+#  - all runners advance the same # of bases as the hit
+# Hit probabilities supplied as a list [single, double, triple, HR] i.e.
+# [0.250, 0.050, 0.005, 0.050]
 
-
+def baseball_runs(prob_hits, n, csv_filename=None, hist_filename=None):
+    obs = pd.DataFrame(arange(n))
+    prob_hits_rev = prob_hits
+    prob_hits_rev.reverse()
+    prob_stack = np.cumsum(list(prob_hits_rev))
+    obs['runs'] = [0] * n
+    obs['batters_faced'] = [0] * n
+    for i in obs.index:
+        runs = 0
+        outs = 0
+        batters_faced = 0
+        bases = [0, 0, 0]
+        while outs < 3:
+            event = np.random.uniform(0, 1)
+            if event < prob_stack[3]: # at least a single
+                runs += bases.pop()
+                bases.insert(0, 1)  
+                if event < prob_stack[2]: # at least a double
+                    runs += bases.pop()
+                    bases.insert(0, 0)
+                if event < prob_stack[1]: # at least a triple
+                    runs += bases.pop()
+                    bases.insert(0, 0)
+                if event < prob_stack[0]: # home run
+                    runs += bases.pop()
+                    bases.insert(0, 0)
+            else: # an out
+                outs += 1
+            batters_faced += 1
+        obs['runs'][i] = runs
+        obs['batters_faced'][i] = batters_faced
+    if csv_filename is not None:
+        obs.to_csv(csv_filename, index=False)
+    if hist_filename is not None:
+        subplot(211)
+        tick_params(labelsize='x-small')
+        hist(obs['runs'], color='g', label='Runs')
+        legend(prop={'size': 'x-small'})
+        subplot(212)
+        tick_params(labelsize='x-small')
+        hist(obs['batters_faced'], color='r', label='Batters faced')
+        legend(prop={'size': 'x-small'})
+        savefig(hist_filename)
+        close()
+    return obs
 
 if __name__ == '__main__':
+    
     n = 1000
-    #coin_toss(n, 'coin_toss.csv', 'coin_toss.png')
-    #dice_toss(1, n, 'die_toss.csv', 'die_toss.png')
-    #dice_toss(2, n, 'dice_toss.csv', 'dice_toss.png')
-    #card_draw(1, n, Deck(), 'card_draw.csv', 'card_draw.png')
-    #poker_draw(n, Deck(), 'poker_draw.csv', 'poker_draw.png')
-    #roulette_spin(n, 'roulette_spin.csv', 'roulette_spin.png')
-    #roulette_to_bankruptcy(25, n, 'roulette_to_bankruptcy.csv', 'roulette_to_bankruptcy.png')
-    #elevator_weight(10, 1750, n, 'elevator_weight.csv', 'elevator_weight.png')
-    #website_visits(500, 0.05, '1/1/2010', n, 'website_visits.csv', 'website_visits.png')
-    #stock_prices(0.03, 0.3, 100, n, 'stock_prices.csv', 'stock_prices.png')
-    #bank_flows(100, 100, 5, 0.05, 0.04, n, 'bank_flows.csv', 'bank_flows.png')
+    
+    coin_toss(n, 'coin_toss.csv', 'coin_toss.png')
+    print('Coin toss written to coin_toss.csv, coin_toss.png')
+    
+    dice_toss(1, n, 'die_toss.csv', 'die_toss.png')
+    print('Die toss written to die_toss.csv, die_toss.png')
+    dice_toss(2, n, 'dice_toss.csv', 'dice_toss.png')
+    print('2-dice toss written to dice_toss.csv, dice_toss.png')
+    
+    card_draw(1, n, Deck(), 'card_draw.csv', 'card_draw.png')
+    print('Card draw written to card_draw.csv, card_draw.png')
+    poker_draw(n, Deck(), 'poker_draw.csv', 'poker_draw.png')
+    print('Poker draw written to poker_draw.csv, poker_draw.png')
+    
+    roulette_spin(n, 'roulette_spin.csv', 'roulette_spin.png')
+    print('Roulette spin written to roulette_spin.csv, roulette_spin.png')
+    roulette_to_bankruptcy(25, n, 'roulette_to_bankruptcy.csv', 'roulette_to_bankruptcy.png')
+    print('Roulette-to-bankruptcy spin written to roulette_to_bankruptcy.csv, roulette_to_bankruptcy.png')
+    
+    elevator_weight(10, 1750, n, 160, 40, 'elevator_weight.csv', 'elevator_weight.png')
+    print('Elevator weight written to elevator_weight.csv, elevator_weight.png')
+    
+    website_visits(500, 0.05, '1/1/2010', n, 'website_visits.csv', 'website_visits.png')
+    print('Website visits written to website_visits.csv, website_visits.png')
+    stock_prices(0.03, 0.3, 100, n, 'stock_prices.csv', 'stock_prices.png')
+    print('Stock prices written to stock_prices.csv, stock_prices.png')
+    bank_flows(100, 100, 5, 0.05, 0.04, n, 'bank_flows.csv', 'bank_flows.png')
+    print('Bank flows written to bank_flows.csv, bank_flows.png')
+    
+    baseball_runs([0.250, 0.050, 0.005, 0.025], n, 'baseball_runs.csv', 'baseball_runs.png')
+    print('Baseball runs (custom exercise) written to baseball_runs.csv, baseball_runs.png')
