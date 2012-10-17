@@ -285,6 +285,35 @@ def website_visits(visit_rate, purchase_rate, start_date, n, csv_filename=None,
 
 # problem 10 - stock prices
 
+def stock_prices(drift, volatility, initial_price, n, csv_filename=None, 
+                 hist_filename=None):
+    obs = pd.DataFrame(index=arange(n))
+    obs['returns'] = np.random.normal(drift/252, volatility/sqrt(252), n)
+    prices = [0] * n
+    prices[0] = initial_price * (1 + obs.ix[0]['returns'])
+    for i in range(1, n):
+        prices[i] = prices[i-1] * (1 + obs.ix[i]['returns'])
+    obs['prices'] = prices
+    if csv_filename is not None:
+        obs.to_csv(csv_filename, index=False)
+    if hist_filename is not None:
+        subplot(221)
+        tick_params(labelsize='x-small')
+        hist(obs['returns'], bins=20, color='b', label='Returns')
+        legend(prop={'size': 'x-small'})
+        subplot(222)
+        tick_params(labelsize='x-small')
+        hist(obs['prices'], bins=20, color='g', label='Prices')
+        legend(prop={'size': 'x-small'})
+        subplot(212)
+        tick_params(labelsize='x-small')
+        plot(range(n), obs['prices'])
+        xlabel('time')
+        ylabel('price')
+        savefig(hist_filename)
+        close()
+    return obs
+        
 # problem 11 - bank cash flows
 
 # problem 12 - 
@@ -299,3 +328,5 @@ if __name__ == '__main__':
     #roulette_spin(n, 'roulette_spin.csv', 'roulette_spin.png')
     #roulette_to_bankruptcy(25, n, 'roulette_to_bankruptcy.csv', 'roulette_to_bankruptcy.png')
     #elevator_weight(10, 1750, n, 'elevator_weight.csv', 'elevator_weight.png')
+    #website_visits(500, 0.05, '1/1/2010', n, 'website_visits.csv', 'website_visits.png')
+    #stock_prices(0.03, 0.3, 100, n, 'stock_prices.csv', 'stock_prices.png')
