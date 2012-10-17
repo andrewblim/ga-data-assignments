@@ -315,8 +315,54 @@ def stock_prices(drift, volatility, initial_price, n, csv_filename=None,
     return obs
         
 # problem 11 - bank cash flows
+# A simple example - loan starts are Poisson distributed and are all the same 
+# size, same tenor, pay the same rate of interest, and have the same probability 
+# of default at each time period. Loans of each vintage are kept track of with a 
+# queue; pass print_loan_queue=True to see the loan queue at each point in time. 
 
-# problem 12 - 
+def bank_flows(loan_freq, loan_size, tenor, interest_rate, default_prob, n, 
+               csv_filename=None, hist_filename=None, print_loan_queue=False):
+    
+    obs = pd.DataFrame(index=arange(n))
+    obs['loans_made'] = np.random.poisson(loan_freq, n)
+    obs['loans'] = -obs['loans_made'] * loan_size
+    
+    loans_out = [0] * tenor
+    interest = [0] * n
+    principal = [0] * n
+    
+    for i in obs.index:
+        # randomly default some loans, then pay interest and principal
+        if print_loan_queue:
+            print i, loans_out
+        loans_out = map(lambda x: np.random.binomial(x, 1-default_prob) if x > 0 else 0, loans_out)
+        interest[i] = sum(loans_out) * loan_size * interest_rate
+        principal[i] = loans_out.pop() * loan_size
+        loans_out.insert(0, obs['loans_made'][i])
+    obs['interest'] = interest
+    obs['principal'] = principal
+    
+    obs['cash_flow'] = obs['loans'] + obs['interest'] + obs['principal']
+    obs['cumulative_cash_flow'] = np.cumsum(obs['cash_flow'])
+    
+    if csv_filename is not None:
+        obs.to_csv(csv_filename, index=False)
+    if hist_filename is not None:
+        subplot(211)
+        tick_params(labelsize='x-small')
+        hist(obs['cash_flow'], bins=20, color='b', label='Cash flow')
+        legend(prop={'size': 'x-small'})
+        subplot(212)
+        tick_params(labelsize='x-small')
+        plot(range(n), obs['cumulative_cash_flow'])
+        xlabel('time')
+        ylabel('cash flow')
+        savefig(hist_filename)
+        close()
+
+# problem 12 - custom ()
+
+
 
 if __name__ == '__main__':
     n = 1000
@@ -330,3 +376,4 @@ if __name__ == '__main__':
     #elevator_weight(10, 1750, n, 'elevator_weight.csv', 'elevator_weight.png')
     #website_visits(500, 0.05, '1/1/2010', n, 'website_visits.csv', 'website_visits.png')
     #stock_prices(0.03, 0.3, 100, n, 'stock_prices.csv', 'stock_prices.png')
+    #bank_flows(100, 100, 5, 0.05, 0.04, n, 'bank_flows.csv', 'bank_flows.png')
