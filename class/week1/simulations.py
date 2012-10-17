@@ -12,7 +12,7 @@ def coin_toss(n, csv_filename=None, hist_filename=None):
     if csv_filename is not None:
         tosses.to_csv(csv_filename, header=True, index=False)
     if hist_filename is not None:
-        x = arange(0, 2)
+        x = arange(2)
         counts = [sum(tosses == level) for level in levels]
         bar(x, counts, width=1)
         xlim(0, 2)
@@ -192,7 +192,77 @@ def poker_draw(n, deck, csv_filename=None, hist_filename=None):
 
 # problem 6 - roulette wheel
 
-def roulette_spin(n, ):
+def roulette_spin(n, csv_filename=None, hist_filename=None):
+    levels = range(37) + ['00']
+    spins = pd.Series([levels[x] for x in randint(0, len(levels), size=n)], name='spins')
+    if csv_filename is not None:
+        spins.to_csv(csv_filename, header=True, index=False)
+    if hist_filename is not None:
+        x = arange(len(levels))
+        counts = [sum(spins == level) for level in levels]
+        bar(x, counts, width=1)
+        xlim(0, len(levels))
+        tick_params(labelsize='x-small')
+        xticks(x + 0.5, levels)
+        savefig(hist_filename)
+        close()
+    return spins
+
+# problem 7 - roulette wheel to bankruptcy, betting on black
+
+def roulette_to_bankruptcy(initial_bank, n, csv_filename=None, hist_filename=None):
+    runs = pd.Series(index=arange(n), name='runs')
+    for i in runs.index:
+        bank = initial_bank
+        run_length = 0
+        while bank > 0:
+            run_length += 1
+            spin = randint(0,38)
+            if spin < 18: bank += 1
+            else: bank -= 1
+        runs.ix[i] = run_length
+    if csv_filename is not None:
+        runs.to_csv(csv_filename, header=True, index=False)
+    if hist_filename is not None:
+        hist(runs, bins=20)
+        savefig(hist_filename)
+        close()
+    return runs
+
+# problem 8 - elevator weight limit
+# approximating weight with a normal distribution
+
+def elevator_weight(num_people, limit, n, mean_weight, sd_weight, 
+                    csv_filename=None, hist_filename=None):
+    runs = pd.DataFrame(index=arange(n))
+    for i in range(num_people):
+        label = 'person' + str(i)
+        runs[label] = normal(mean_weight, sd_weight, n)
+    runs['sum'] = runs.apply(sum, axis=1)
+    runs['overweight'] = runs['sum'] > limit
+    if csv_filename is not None:
+        runs.to_csv(csv_filename, index=False)
+    if hist_filename is not None:
+        bin_start = floor(min(runs['sum']))
+        bin_end = ceil(max(runs['sum'])) + 1
+        bin_width = (bin_end - bin_start) / 30.0
+        bins = arange(bin_start, bin_end, bin_width)
+        hist(runs['sum'], bins=bins, color='b', label='All sums')
+        tail_values = filter(lambda x: x >= limit, runs['sum'])
+        tail_bins = filter(lambda x: x >= limit, bins)
+        hist(tail_values, bins=bins, color='r', label='Sums over limit')
+        legend(prop={'size': 'small'})
+        savefig(hist_filename)
+        close()
+    return runs
+
+# problem 9 - website visits
+
+# problem 10 - stock prices
+
+# problem 11 - bank cash flows
+
+# problem 12 - 
 
 if __name__ == '__main__':
     n = 1000
@@ -201,3 +271,6 @@ if __name__ == '__main__':
     #dice_toss(2, n, 'dice_toss.csv', 'dice_toss.png')
     #card_draw(1, n, Deck(), 'card_draw.csv', 'card_draw.png')
     #poker_draw(n, Deck(), 'poker_draw.csv', 'poker_draw.png')
+    #roulette_spin(n, 'roulette_spin.csv', 'roulette_spin.png')
+    #roulette_to_bankruptcy(25, n, 'roulette_to_bankruptcy.csv', 'roulette_to_bankruptcy.png')
+    #elevator_weight(10, 1750, n, 'elevator_weight.csv', 'elevator_weight.png')
