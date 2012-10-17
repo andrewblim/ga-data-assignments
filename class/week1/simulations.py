@@ -249,7 +249,6 @@ def elevator_weight(num_people, limit, n, mean_weight, sd_weight,
         bins = arange(bin_start, bin_end, bin_width)
         hist(runs['sum'], bins=bins, color='b', label='All sums')
         tail_values = filter(lambda x: x >= limit, runs['sum'])
-        tail_bins = filter(lambda x: x >= limit, bins)
         hist(tail_values, bins=bins, color='r', label='Sums over limit')
         legend(prop={'size': 'small'})
         savefig(hist_filename)
@@ -257,6 +256,32 @@ def elevator_weight(num_people, limit, n, mean_weight, sd_weight,
     return runs
 
 # problem 9 - website visits
+
+def website_visits(visit_rate, purchase_rate, start_date, n, csv_filename=None, 
+                   hist_filename=None):
+    obs = pd.DataFrame(index=arange(n))
+    obs['dates'] = pd.date_range(start_date, periods=n, freq='d')
+    obs['visits'] = np.random.poisson(visit_rate, size=n)
+    obs['purchases'] = map(lambda x: np.random.binomial(x, purchase_rate), obs['visits'])
+    if csv_filename is not None:
+        obs.to_csv(csv_filename, index=False)
+    if hist_filename is not None:
+        subplot(221)
+        tick_params(labelsize='x-small')
+        hist(obs['visits'], bins=20, color='b', label='Visits')
+        legend(prop={'size': 'small'})
+        subplot(222)
+        tick_params(labelsize='x-small')
+        hist(obs['purchases'], bins=20, color='g', label='Purchases')
+        legend(prop={'size': 'small'})
+        subplot(212)
+        tick_params(labelsize='x-small')
+        scatter(obs['visits'], obs['purchases'])
+        xlabel('visits')
+        ylabel('purchases')
+        savefig(hist_filename)
+        close()
+    return obs
 
 # problem 10 - stock prices
 
