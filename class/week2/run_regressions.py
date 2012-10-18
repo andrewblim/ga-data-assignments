@@ -15,6 +15,12 @@ if __name__ == '__main__':
     simple_regression(data_filename='fed_employment.csv', 
                     col_x='Civilian participation (% change)',
                     col_y='Unemployment rate (% change)',
-                    transform_x=log,
                     summary_filename='fed_employment.summary.txt',
                     plot_filename='fed_employment.png')
+    
+    print('Regressing SAT math scores on SAT writing scores')
+    simple_regression(data_filename='nycdata_satbyschool.csv', 
+                      col_x='Writing Mean',
+                      col_y='Mathematics Mean',
+                      summary_filename='nycdata_satbyschool.summary.txt',
+                      plot_filename='nycdata_satbyschool.png')

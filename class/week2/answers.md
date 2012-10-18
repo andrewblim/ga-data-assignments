@@ -38,6 +38,24 @@ The R^2 is 0.637.
 - Results (output): `worldbank_lifeexp_gdp.summary.txt`
 - Plot (output): `worldbank_lifeexp_gdp.png`
 
-#### 
+#### Change in unemployment rate vs. change in labor force participation rate
 
-I used data from the [St. Louis Fed](http://research.stlouisfed.org/fred2/)
+I didn't have any particular expectations about this but the issue of participation rates making the unemployment statistics look better than they "really" are has been a subject of recent political conversation. If I had to guess, I would have said that changes in the two rates were negatively correlated, since I think poor economic prospects lead to people dropping out of the labor force entirely, and vice versa for good economic prospects. I used data from the [St. Louis Fed](http://research.stlouisfed.org/fred2/), with data going all the way back to 1948. 
+
+The R^2 is 0.022, really basically 0. 
+
+- Data (input): `fed_employment.csv`. 
+- Results (output): `fed_employment.summary.txt`
+- Plot (output): `fed_employment.png`
+
+#### NYC (large) high school 2010 SAT math scores vs. writing scores
+
+Data came from [NYC OpenData](https://nycopendata.socrata.com/Education/SAT-College-Board-2010-School-Level-Results/zt9s-n5aj). I would expect a positive correlation, as I'm pretty sure the main axis of variation amongst high schools' test-taking scores is good scores and bad scores, not strong in math vs. strong in writing. I eliminated any schools with fewer than 50 reported scores, which still leaves plenty of data (> 200 lines). I tried to predict math scores from writing scores. 
+
+The R^2 is high as expected, 0.852. The interesting outlier on the fit has one of the poorest writing scores, at 314, but a well above-average math score at 532 (mean 435, median 419, standard deviation 71.5). This school is the Lower East Side Preparatory High School and it's in Chinatown, and judging by its [website](http://www.lespnyc.com/) it seems to serve a heavily Chinese student body. 
+
+- Data (input): `nycdata_satbyschool.csv`. 
+- Results (output): `nycdata_satbyschool.summary.txt`
+- Plot (output): `nycdata_satbyschool.png`
+
+#### 
