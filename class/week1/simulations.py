@@ -16,7 +16,7 @@ def coin_toss(n, csv_filename=None, hist_filename=None):
         counts = [sum(tosses == level) for level in levels]
         bar(x, counts, width=1)
         xlim(0, 2)
-        xticks(x + 0.5, levels)
+        xticks(x + 0.5, ['heads', 'tails'])
         savefig(hist_filename)
         close()
     return tosses
@@ -211,7 +211,7 @@ def roulette_spin(n, csv_filename=None, hist_filename=None):
 # problem 7 - roulette wheel to bankruptcy, betting on black
 
 def roulette_to_bankruptcy(initial_bank, n, csv_filename=None, hist_filename=None):
-    runs = pd.Series(index=arange(n), name='runs')
+    runs = pd.Series(index=arange(n), name='runs', dtype=int)
     for i in runs.index:
         bank = initial_bank
         run_length = 0
@@ -288,7 +288,7 @@ def website_visits(visit_rate, purchase_rate, start_date, n, csv_filename=None,
 def stock_prices(drift, volatility, initial_price, n, csv_filename=None, 
                  hist_filename=None):
     obs = pd.DataFrame(index=arange(n))
-    obs['returns'] = np.random.normal(drift/252, volatility/sqrt(252), n)
+    obs['returns'] = np.random.normal(drift/252, volatility/sqrt(252), n)  # 252 = annualization factor
     prices = [0] * n
     prices[0] = initial_price * (1 + obs.ix[0]['returns'])
     for i in range(1, n):
@@ -372,7 +372,7 @@ def bank_flows(loan_freq, loan_size, tenor, interest_rate, default_prob, n,
 # [0.250, 0.050, 0.005, 0.050]
 
 def baseball_runs(prob_hits, n, csv_filename=None, hist_filename=None):
-    obs = pd.DataFrame(arange(n))
+    obs = pd.DataFrame(index=arange(n))
     prob_hits_rev = prob_hits
     prob_hits_rev.reverse()
     prob_stack = np.cumsum(list(prob_hits_rev))
@@ -407,47 +407,13 @@ def baseball_runs(prob_hits, n, csv_filename=None, hist_filename=None):
     if hist_filename is not None:
         subplot(211)
         tick_params(labelsize='x-small')
-        hist(obs['runs'], color='g', label='Runs')
+        hist(obs['runs'], color='g', label='Runs', bins=arange(max(obs['runs'])))
         legend(prop={'size': 'x-small'})
         subplot(212)
         tick_params(labelsize='x-small')
-        hist(obs['batters_faced'], color='r', label='Batters faced')
+        hist(obs['batters_faced'], color='r', label='Batters faced', 
+             bins=arange(max(obs['batters_faced'])))
         legend(prop={'size': 'x-small'})
         savefig(hist_filename)
         close()
     return obs
-
-if __name__ == '__main__':
-    
-    n = 1000
-    
-    coin_toss(n, 'coin_toss.csv', 'coin_toss.png')
-    print('Coin toss written to coin_toss.csv, coin_toss.png')
-    
-    dice_toss(1, n, 'die_toss.csv', 'die_toss.png')
-    print('Die toss written to die_toss.csv, die_toss.png')
-    dice_toss(2, n, 'dice_toss.csv', 'dice_toss.png')
-    print('2-dice toss written to dice_toss.csv, dice_toss.png')
-    
-    card_draw(1, n, Deck(), 'card_draw.csv', 'card_draw.png')
-    print('Card draw written to card_draw.csv, card_draw.png')
-    poker_draw(n, Deck(), 'poker_draw.csv', 'poker_draw.png')
-    print('Poker draw written to poker_draw.csv, poker_draw.png')
-    
-    roulette_spin(n, 'roulette_spin.csv', 'roulette_spin.png')
-    print('Roulette spin written to roulette_spin.csv, roulette_spin.png')
-    roulette_to_bankruptcy(25, n, 'roulette_to_bankruptcy.csv', 'roulette_to_bankruptcy.png')
-    print('Roulette-to-bankruptcy spin written to roulette_to_bankruptcy.csv, roulette_to_bankruptcy.png')
-    
-    elevator_weight(10, 1750, n, 160, 40, 'elevator_weight.csv', 'elevator_weight.png')
-    print('Elevator weight written to elevator_weight.csv, elevator_weight.png')
-    
-    website_visits(500, 0.05, '1/1/2010', n, 'website_visits.csv', 'website_visits.png')
-    print('Website visits written to website_visits.csv, website_visits.png')
-    stock_prices(0.03, 0.3, 100, n, 'stock_prices.csv', 'stock_prices.png')
-    print('Stock prices written to stock_prices.csv, stock_prices.png')
-    bank_flows(100, 100, 5, 0.05, 0.04, n, 'bank_flows.csv', 'bank_flows.png')
-    print('Bank flows written to bank_flows.csv, bank_flows.png')
-    
-    baseball_runs([0.250, 0.050, 0.005, 0.025], n, 'baseball_runs.csv', 'baseball_runs.png')
-    print('Baseball runs (custom exercise) written to baseball_runs.csv, baseball_runs.png')
