@@ -31,3 +31,10 @@ if __name__ == '__main__':
                     col_y='Property crime (per 100k)',
                     summary_filename='census_crime_poverty.summary.txt',
                     plot_filename='census_crime_poverty.png')
+
+    print('Regressing NBA points per game on percentage of points from 3s')
+    simple_regression(data_filename='nba_seasons.csv', 
+                    col_x='Pct points from 3s',
+                    col_y='Points per game',
+                    summary_filename='nba_seasons.summary.txt',
+                    plot_filename='nba_seasons.png')
