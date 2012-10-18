@@ -24,3 +24,10 @@ if __name__ == '__main__':
                       col_y='Mathematics Mean',
                       summary_filename='nycdata_satbyschool.summary.txt',
                       plot_filename='nycdata_satbyschool.png')
+    
+    print('Regressing crime by state on poverty rate by state')
+    simple_regression(data_filename='census_crime_poverty.csv', 
+                    col_x='Poverty rate',
+                    col_y='Property crime (per 100k)',
+                    summary_filename='census_crime_poverty.summary.txt',
+                    plot_filename='census_crime_poverty.png')

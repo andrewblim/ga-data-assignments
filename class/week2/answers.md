@@ -3,7 +3,7 @@
 
 Andrew Lim / 17 Oct 2012
 
-I used Google Refine to clean up my data and get it in the format I wanted, so all the csv files supplied with this problem set are already in a nice format. Great utility! On the other hand, I couldn't get regressionplots from statsmodels to work properly without a cryptic KeyError (seems to be related to drawing the confidence bands, as I get the graph without the bands to appear before the exception comes up). So I just made the plots with matplotlib directly, unfortunately I'm missing confidence bands. 
+I used Google Refine to clean up my data and get it in the format I wanted, so all the csv files supplied with this problem set are already in a nice format. Great utility! On the other hand, I couldn't get regressionplots from statsmodels to work properly without a cryptic KeyError (seems to be related to drawing the confidence bands, as I get the graph without the bands to appear before the exception gets thrown). So I just made the plots with matplotlib directly, unfortunately I'm missing confidence bands. All regressions include an intercept term. 
 
 To run everything, run `python run_regressions.py`. 
 
@@ -58,4 +58,13 @@ The R^2 is high as expected, 0.852. The interesting outlier on the fit has one o
 - Results (output): `nycdata_satbyschool.summary.txt`
 - Plot (output): `nycdata_satbyschool.png`
 
-#### 
+#### Property crime rate and poverty rate by state
+
+Data came from the US Census and is from 2009: [here](http://www.census.gov/compendia/statab/cats/law_enforcement_courts_prisons/crimes_and_crime_rates.html) for crime and [here](http://www.census.gov/compendia/statab/cats/income_expenditures_poverty_wealth/income_and_poverty--state_and_local_data.html) for poverty. Property crime is per 100k people, so it's normalized for different state populations. I'd expect a weakly positive correlation, as crime and poor economic straits often go hand in hand, and the desperately poor may be driven to property crime - however I don't think it'll be too strong of a relationship in terms of how much variance is explained. I tried to predict crime rates from poverty rates. 
+
+The R^2 is 0.289. 
+
+- Data (input): `census_crime_poverty.csv`. 
+- Results (output): `census_crime_poverty.summary.txt`
+- Plot (output): `census_crime_poverty.png`
+
