@@ -57,11 +57,7 @@ To run everything, run `python run_simulations.py`.
 
 6. (`roulette_spin.csv` and `roulette_spin.png`) Each slot is equally likely to turn up, so this has a pmf of f(s) = 1/38 for s in the set of 38 possible slots (1-36, 0, and 00). 
 
-7. (`roulette_to_bankruptcy.csv` and `roulette_to_bankruptcy.png`) Each roll has a 18/38 chance of success (black) and a 20/38 chance of failure (red, or the 0 or 00). This variable is the expected number of rolls before we see 25 more failures than successes. Let's call the failure prob = p. Thus the pmf is, for x an odd number >= 25 (x cannot be even since after an even number of spins our bankroll is always 1 mod 2, and we must end on 0): 
-
-    f(x) = p^(24 + (x-25)/2) * (1-p)^((x-25)/2) * p * (x-1 choose (x-25)/2)
-    
-    
+7. (`roulette_to_bankruptcy.csv` and `roulette_to_bankruptcy.png`) Each roll has a 18/38 chance of success (black) and a 20/38 chance of failure (red, or the 0 or 00). This variable is the expected number of rolls before we see 25 more failures than successes. I couldn't get a closed-form pdf out of this one, it was kind of sticky. 
 
 8. (`elevator_weight.csv` and `elevator_weight.png`) I represented each weight as a normally distributed variable with mean 160lbs and standard deviation 40lbs. Normal isn't going to be the exact right distribution; you can have negative values, (although they are very unlikely with that parameterization), plus I imagine there's a little skew, but I don't think it's a bad approximation. The sum of 10 of these is itself normal with mean 1600 and standard deviation 40/sqrt(10), or about 12.6. The probability of being over 1750, the limit I used, is just 1 - N(1750), where N is the normal cdf with that mean and standard deviation. 
 
