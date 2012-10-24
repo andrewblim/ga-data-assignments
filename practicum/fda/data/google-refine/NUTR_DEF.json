@@ -1,0 +1,142 @@
+[
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 1 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 1",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 2 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 2",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 3 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 3",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 4 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 4",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 5 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 5",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 6 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 6",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 5 using expression value.toNumber()",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 5",
+    "expression": "value.toNumber()",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 6 using expression value.toNumber()",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 6",
+    "expression": "value.toNumber()",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 1 to Nutr_No",
+    "oldColumnName": "Column 1",
+    "newColumnName": "Nutr_No"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 2 to Units",
+    "oldColumnName": "Column 2",
+    "newColumnName": "Units"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 3 to Tagname",
+    "oldColumnName": "Column 3",
+    "newColumnName": "Tagname"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 4 to NutrDesc",
+    "oldColumnName": "Column 4",
+    "newColumnName": "NutrDesc"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 5 to Num_Dec",
+    "oldColumnName": "Column 5",
+    "newColumnName": "Num_Dec"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 6 to SR_Order",
+    "oldColumnName": "Column 6",
+    "newColumnName": "SR_Order"
+  }
+]

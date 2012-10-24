@@ -1,0 +1,195 @@
+[
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 1 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 1",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 1 to NDB_No",
+    "oldColumnName": "Column 1",
+    "newColumnName": "NDB_No"
+  },
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 2 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 2",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 2 to Nutr_No",
+    "oldColumnName": "Column 2",
+    "newColumnName": "Nutr_No"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 3 to Nutr_Val",
+    "oldColumnName": "Column 3",
+    "newColumnName": "Nutr_Val"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 4 to Num_Data_Pts",
+    "oldColumnName": "Column 4",
+    "newColumnName": "Num_Data_Pts"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 5 to Std_Error",
+    "oldColumnName": "Column 5",
+    "newColumnName": "Std_Error"
+  },
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 6 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 6",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 6 to Src_Cd",
+    "oldColumnName": "Column 6",
+    "newColumnName": "Src_Cd"
+  },
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 7 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 7",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 7 to Deriv_Cd",
+    "oldColumnName": "Column 7",
+    "newColumnName": "Deriv_Cd"
+  },
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 8 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 8",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 8 to Ref_NDB_No",
+    "oldColumnName": "Column 8",
+    "newColumnName": "Ref_NDB_No"
+  },
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 9 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 9",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 9 to Add_Nutr_Mark",
+    "oldColumnName": "Column 9",
+    "newColumnName": "Add_Nutr_Mark"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 10 to Num_Studies",
+    "oldColumnName": "Column 10",
+    "newColumnName": "Num_Studies"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 11 to Min",
+    "oldColumnName": "Column 11",
+    "newColumnName": "Min"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 12 to Max",
+    "oldColumnName": "Column 12",
+    "newColumnName": "Max"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 13 to DF",
+    "oldColumnName": "Column 13",
+    "newColumnName": "DF"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 14 to Low_EB",
+    "oldColumnName": "Column 14",
+    "newColumnName": "Low_EB"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 15 to Up_EB",
+    "oldColumnName": "Column 15",
+    "newColumnName": "Up_EB"
+  },
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 16 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 16",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 16 to Stat_cmt",
+    "oldColumnName": "Column 16",
+    "newColumnName": "Stat_cmt"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 17 to CC",
+    "oldColumnName": "Column 17",
+    "newColumnName": "CC"
+  }
+]

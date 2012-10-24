@@ -1,0 +1,40 @@
+[
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 1 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 1",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/text-transform",
+    "description": "Text transform on cells in column Column 2 using expression grel:replace(value,'~','')",
+    "engineConfig": {
+      "facets": [],
+      "mode": "row-based"
+    },
+    "columnName": "Column 2",
+    "expression": "grel:replace(value,'~','')",
+    "onError": "keep-original",
+    "repeat": false,
+    "repeatCount": 10
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 1 to FdGrp_Cd",
+    "oldColumnName": "Column 1",
+    "newColumnName": "FdGrp_Cd"
+  },
+  {
+    "op": "core/column-rename",
+    "description": "Rename column Column 2 to FdGrp_Desc",
+    "oldColumnName": "Column 2",
+    "newColumnName": "FdGrp_Desc"
+  }
+]
