@@ -3,7 +3,7 @@
 
 Andrew Lim / 25 Oct 2012
 
-To run the EMR job, run `bash run-emr.sh`. Overwrite the output parameter in the script with your own S3 bucket. Output from my own run was downloaded to the `emr_output` directory; to convert this to nicely printed letter frequencies with and without the letter S (see below for why), run `python convert_frequencies.py`. 
+To run the EMR job, run `bash run-emr.sh`, overwriting the output parameter in the script with your own S3 location. I downloaded output from my own run to the `emr_output` directory. To convert this to nicely printed letter frequencies with the letter S omitted and get the mean squared errors, run `python convert_frequencies.py`. 
 
 `pip freeze` on my virtualenv: 
 
@@ -28,7 +28,7 @@ To run the EMR job, run `bash run-emr.sh`. Overwrite the output parameter in the
     tornado==2.4
     wsgiref==0.1.2
 
-### Statement of project
+### Explanation of project
 
 [According](http://www.scrabble-assoc.com/info/history.html) to the National Scrabble Association, Scrabble inventor Alfred Mosher Butts studied the front pages of the New York Times in order to determine letter frequencies in his game (although Wikipedia [states](http://en.wikipedia.org/wiki/Alfred_Mosher_Butts) he deliberately restricted the number of S tiles). Butts did by hand what modern computers can do programmatically with much greater speed and on much larger sets of data. Google Ngrams offers a large data set of word usage over time; its corpus texts are analogous to the NYT front pages that Butts scoured. 
 
@@ -40,13 +40,24 @@ The huge bottleneck in this project was in fact uploading all of the 1-grams to 
 
 The word list I used was TWL06, downloaded from the Internet Scrabble Club's [repository of dictionaries](http://www.isc.ro/en/commands/lists.html). TWL06 is the official word list for North American Scrabble tournaments. 
 
+Scrabble tile frequencies were found [here](http://en.wikipedia.org/wiki/Scrabble_letter_distributions). Words with Friends tile frequencies were found [here](http://tile-counter.com/wwf-tile-distribution-and-letter-frequency). 
+
 ### File info
 
 All data files can be found at `s3://andrewblim-ngrams/twl06-analysis`, which is public. The Ngrams data are at `s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_<letter>.gz` and the TWL06 word list is at `s3://andrewblim-ngrams/twl06-analysis/TWL06.txt`. 
 
 ### Findings
 
-The percentage frequencies, excluding the letter S because they may not reflect true language frequency in the games, are as follows (and sorry if you are reading this as raw text and not with a Markdown reader, but this is how the syntax specifies you add tables, with HTML): 
+The percentage frequencies, excluding the letter S because they may not reflect true language frequency in the games, and also excluding blank tiles, are below. (And sorry if you are reading this as raw text and not with a Markdown reader.) 
+
+The mean squared errors of the percentages (decimal percentages * 100) were:
+
+- 1938-1948 data:
+    - Scrabble: 
+    - WWF: 
+- 2005- data:
+    - Scrabble: 
+    - WWF: 
 
 <table>
     <tr>
@@ -58,183 +69,176 @@ The percentage frequencies, excluding the letter S because they may not reflect 
     </tr>
     <tr>
         <td>A</td>
-        <td></td>
-        <td></td>
+        <td>9.57</td>
+        <td>9.28</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>B</td>
-        <td></td>
-        <td></td>
+        <td>2.13</td>
+        <td>2.06</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>C</td>
-        <td></td>
-        <td></td>
+        <td>2.13</td>
+        <td>2.06</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>D</td>
-        <td></td>
-        <td></td>
+        <td>4.26</td>
+        <td>5.15</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>E</td>
-        <td></td>
-        <td></td>
+        <td>12.77</td>
+        <td>13.40</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>F</td>
-        <td></td>
-        <td></td>
+        <td>2.13</td>
+        <td>2.06</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>G</td>
-        <td></td>
-        <td></td>
+        <td>3.19</td>
+        <td>3.09</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>H</td>
-        <td></td>
-        <td></td>
+        <td>2.13</td>
+        <td>4.12</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>I</td>
-        <td></td>
-        <td></td>
+        <td>9.57</td>
+        <td>8.25</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>J</td>
-        <td></td>
-        <td></td>
+        <td>1.06</td>
+        <td>1.03</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>K</td>
-        <td></td>
-        <td></td>
+        <td>1.06</td>
+        <td>1.03</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>L</td>
-        <td></td>
-        <td></td>
+        <td>4.26</td>
+        <td>4.12</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>M</td>
-        <td></td>
-        <td></td>
+        <td>2.13</td>
+        <td>2.06</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>N</td>
-        <td></td>
-        <td></td>
+        <td>6.38</td>
+        <td>5.15</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>O</td>
-        <td></td>
-        <td></td>
+        <td>8.51</td>
+        <td>8.25</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>P</td>
-        <td></td>
-        <td></td>
+        <td>2.13</td>
+        <td>2.06</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>Q</td>
-        <td></td>
-        <td></td>
+        <td>1.06</td>
+        <td>1.03</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>R</td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-    </tr>
-    <tr>
-        <td>S</td>
-        <td></td>
-        <td></td>
+        <td>6.38</td>
+        <td>6.19</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>T</td>
-        <td></td>
-        <td></td>
+        <td>6.38</td>
+        <td>7.22</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>U</td>
-        <td></td>
-        <td></td>
+        <td>4.26</td>
+        <td>4.12</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>V</td>
-        <td></td>
-        <td></td>
+        <td>2.13</td>
+        <td>2.06</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>W</td>
-        <td></td>
-        <td></td>
+        <td>2.13</td>
+        <td>2.06</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>X</td>
-        <td></td>
-        <td></td>
+        <td>1.06</td>
+        <td>1.03</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>Y</td>
-        <td></td>
-        <td></td>
+        <td>2.13</td>
+        <td>2.06</td>
         <td></td>
         <td></td>
     </tr>
     <tr>
         <td>Z</td>
-        <td></td>
-        <td></td>
+        <td>1.06</td>
+        <td>1.03</td>
         <td></td>
         <td></td>
     </tr>

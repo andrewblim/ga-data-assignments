@@ -33,7 +33,6 @@ def convert_frequencies(directory='emr_output'):
     return old_freq, new_freq
 
 def print_frequencies(old_freq, new_freq, omit_s=False):
-    
     if not omit_s:
         print 'old'
         for k in sorted(old_freq.keys()):
@@ -52,9 +51,37 @@ def print_frequencies(old_freq, new_freq, omit_s=False):
                 print '%s : %2.2f' % (k, (new_freq[k] / (1.0 - new_freq['s'])) * 100)
 
 if __name__ == '__main__':
+    
     if len(sys.argv) < 2:
         old_freq, new_freq = convert_frequencies()
     else:
         old_freq, new_freq = convert_frequencies(sys.argv[1])
-    print_frequencies(old_freq, new_freq)
+    
+    scrabble_freq = [9,2,2,4,12,2,3,2,9,1,1,4,2,6,8,2,1,6,6,4,2,2,1,2,1]
+    scrabble_freq_p = [x/float(sum(scrabble_freq)) for x in scrabble_freq]
+    scrabble_old_mse = 0
+    for c in range(25):
+        scrabble_old_mse += (scrabble_freq_p[c] - old_freq.values()[c])**2
+    scrabble_old_mse /= float(sum(scrabble_freq))
+    scrabble_new_mse = 0
+    for c in range(25):
+        scrabble_new_mse += (scrabble_freq_p[c] - new_freq.values()[c])**2
+    scrabble_new_mse /= float(sum(scrabble_freq))
+    
+    wwf_freq = [9,2,2,5,13,2,3,4,8,1,1,4,2,5,8,2,1,6,7,4,2,2,1,2,1]
+    wwf_freq_p = [x/float(sum(wwf_freq)) for x in wwf_freq]
+    wwf_old_mse = 0
+    for c in range(25):
+        wwf_old_mse += (wwf_freq_p[c] - old_freq.values()[c])**2
+    wwf_old_mse /= float(sum(wwf_freq))
+    wwf_new_mse = 0
+    for c in range(25):
+        wwf_new_mse += (wwf_freq_p[c] - new_freq.values()[c])**2
+    wwf_new_mse /= float(sum(wwf_freq))
+    
     print_frequencies(old_freq, new_freq, omit_s=True)
+    print 'Scrabble MSE vs. old data: %f' % (scrabble_old_mse * 10000)
+    print 'Scrabble MSE vs. new data: %f' % (scrabble_new_mse * 10000)
+    print 'WWF MSE vs. old data: %f' % (wwf_old_mse * 10000)
+    print 'WWF MSE vs. new data: %f' % (wwf_new_mse * 10000)
+    

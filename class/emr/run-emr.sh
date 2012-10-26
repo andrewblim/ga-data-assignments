@@ -1,4 +1,27 @@
-python emr.py -r emr -o s3://andrewblim-ngrams/twl06-letter-count --no-output \
-    s3://andrewblim-ngrams/en-am/googlebooks-eng-us-all-1gram-20120701-a.gz \
-    s3://andrewblim-ngrams/en-am/googlebooks-eng-us-all-1gram-20120701-b.gz \
-    s3://andrewblim-ngrams/en-am/googlebooks-eng-us-all-1gram-20120701-c.gz
+python emr.py -r emr -o s3://andrewblim-ngrams/twl06-analysis/output --no-output \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_a.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_b.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_c.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_d.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_e.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_f.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_g.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_h.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_i.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_j.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_k.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_l.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_m.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_n.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_o.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_p.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_q.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_r.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_s.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_t.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_u.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_v.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_w.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_x.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_y.gz \
+    s3://andrewblim-ngrams/twl06-analysis/reduced-ngrams/reduced_ngrams_z.gz \
