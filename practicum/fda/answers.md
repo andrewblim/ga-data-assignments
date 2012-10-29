@@ -74,6 +74,8 @@ Based on these results, a one-sentence heuristic for finding high-magnesium food
 
 ### Problem 6
 
-With only the six features above, we actually have much more data at our disposal since we don't need to drop nearly as many rows. The number of foods that have entries for all six features is 5189, up from 711. 
+With only the four features above, we actually have much more data at our disposal since we don't need to drop nearly as many rows. The number of foods that have entries for all six features is 6184, up from 921. 
 
-Running the regression on the expanded data set, the R^2 is still 0.813. The average error on the expanded data set is up a little bit - on the log1p data it's 0.2858, and transformed back out to mg of magnesium it's 12.783553. For a stricter apples-to-apples comparison, I ran it on only the 711 data lines that we'd been previously using and produced an average error of 0.2727 and 13.1287, respectively.
+Running the regression on the expanded data set, the R^2 is barely worse at 0.785. (I used a constant term again, but it remains statistically insignificant.) The average error on the expanded data set is up a little bit - on the log1p data it's 0.341951, and transformed back out to mg of magnesium it's 13.943964. For a stricter apples-to-apples comparison on the errors, I ran the regression on only the 921 data lines that we'd been previously using and produced an average error of 0.344065 (log1p-space) and 14.239102 (untransformed space), respectively. 
+
+This simple, four-feature model is an improvement - with much less data we were more or less able to get as good of a fit as we were able to get using all nutritional label data. 

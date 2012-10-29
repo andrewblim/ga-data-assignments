@@ -105,8 +105,8 @@ if __name__ == '__main__':
         
         mean_error = abs(results.resid).mean()
         mean_expm1_error = abs(expm1(results.model.endog) - expm1(results.predict())).mean()
-        print('Average absolute error of log1p(magnesium): %f' % mean_error)
-        print('Average absolute error of magnesium: %f' % mean_expm1_error)
+        print('Mean abs error of log1p(magnesium), full reg: %f' % mean_error)
+        print('Mean abs error of magnesium, full reg: %f' % mean_expm1_error)
     
     # Check which coefficients in the full regression generate variation in
     # predicted magnesium. 
@@ -138,33 +138,39 @@ if __name__ == '__main__':
                                              coefs[col].quantile(0.025), 
                                              coefs[col].quantile(0.975)))
     
+    # Problem 6
+    
     if options.reduced_reg is True or options.run_all is True:
+        
         sig_cols = ['Sodium, Na (mg)',
                     'Potassium, K (mg)',
                     'Fiber, total dietary (g)',
-                    'Phosphorus, P (mg)',
-                    'Manganese, Mn (mg)',
-                    'Vitamin B-12 (mcg)']
-        reduced_results = regress_log1p_dataframe(data, 'Magnesium, Mg (mg)', sig_cols)
+                    'Protein (g)']
+        reduced_results = regress_log1p_dataframe(data, mg_label, sig_cols)
+        
         f = open(os.path.join(reg_dir, 'reduced_reg.txt'), 'w')
         f.write(reduced_results.summary().__str__() + '\n')
         f.close()
-        reduced_results.save
         f = open(os.path.join(reg_dir, 'reduced_reg.pkl'), 'wb')
         pickle.dump(reduced_results, f)
         f.close()
         
-        mean_error = abs(reduced_results.resid).mean()
-        mean_expm1_error = abs(expm1(reduced_results.model.endog) - \
-                               expm1(reduced_results.predict())).mean()
-        print('Average absolute error log1p(magnesium): %f' % mean_error)
-        print('Average absolute error magnesium: %f' % mean_expm1_error)
-        print('Full regression files generated to dir %s.' % reg_dir)
+        mean_error = abs(reduced_results.predict() - reduced_results.model.endog).mean()
+        mean_expm1_error = abs(expm1(reduced_results.predict()) - expm1(reduced_results.model.endog)).mean()
+        print('Mean abs error of log1p(magnesium), reduced reg: %f' % mean_error)
+        print('Mean abs error magnesium, reduced reg: %f' % mean_expm1_error)
+        print('Full regression files generated to directory %s.' % reg_dir)
         
-        rdata = reduce_data(data, label_cols + ['Magnesium, Mg (mg)'])
-        X = sm.add_constant(log1p(rdata[sig_cols]), prepend=False)
-        mean_error = abs(reduced_results.predict(X) - log1p(rdata['Magnesium, Mg (mg)'])).mean()
-        mean_expm1_error = abs(rdata['Magnesium, Mg (mg)'] - \
-                               expm1(reduced_results.predict(X))).mean()
-        print('Average absolute error log1p(magnesium): %f' % mean_error)
-        print('Average absolute error magnesium: %f' % mean_expm1_error)
+        # run reduced_results on data set used for full_reg
+        
+        full_reg_data = reduce_data(data, label_cols + [mg_label])
+        X = sm.add_constant(log1p(full_reg_data[sig_cols]), prepend=False)
+        y = log1p(full_reg_data[mg_label])
+        mean_error = abs(reduced_results.predict(X) - y).mean()
+        mean_expm1_error = abs(expm1(reduced_results.predict(X)) - expm1(y)).mean()
+        
+        #mean_error = abs(reduced_results.predict(X) - log1p(rdata['Magnesium, Mg (mg)'])).mean()
+        #mean_expm1_error = abs(rdata['Magnesium, Mg (mg)'] - \
+        #                       expm1(reduced_results.predict(X))).mean()
+        print('Mean abs error of log1p(magnesium), reduced reg/initial data: %f' % mean_error)
+        print('Mean abs error of magnesium, reduced reg/initial data: %f' % mean_expm1_error)
