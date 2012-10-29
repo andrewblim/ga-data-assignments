@@ -2,13 +2,24 @@ from pylab import *
 import csv
 import itertools
 import pandas as pd
+import os.path
 import sys
 
-def reformat_foods(output_filename,
-                   nut_data_filename='NUT_DATA.csv',
-                   fd_group_filename='FD_GROUP.csv',
-                   food_des_filename='FOOD_DES.csv',
-                   nutr_def_filename='NUTR_DEF.csv'):
+def generate_food_detail_csv(output_filename,
+                             nut_data_filename='NUT_DATA.csv',
+                             fd_group_filename='FD_GROUP.csv',
+                             food_des_filename='FOOD_DES.csv',
+                             nutr_def_filename='NUTR_DEF.csv'):
+
+    '''Rewrites the csv data in nut_data_filename, fd_group_filename, 
+    food_des_filename, and nutr_def_filename to output_filename, one line per
+    food, with a column for NDB #, food description, then one column per 
+    nutrient (labeled 'nutrient_name (units)'), then columns of 0/1 for each 
+    food group indicating whether the food is in that group or not. 
+    
+    The input csv files are assumed to be in "clean" format, i.e. you have 
+    already cleaned them up from the format they're offered in by the FDA. 
+    '''
 
     food_groups = pd.read_csv(fd_group_filename, index_col='FdGrp_Cd')
     nutrients = pd.read_csv(nutr_def_filename, index_col='Nutr_No')
@@ -74,8 +85,20 @@ def reformat_foods(output_filename,
         sys.stdout.write('\nComplete.\n')
         sys.stdout.flush()
 
+def nutrient_columns(nutr_def_filename='NUTR_DEF.csv'):
+    '''Return a list of nutrient columns as produced by generate_food_detail_csv()'''
+    nutrients = pd.read_csv(nutr_def_filename, index_col='Nutr_No')
+    return map(lambda x: '%s (%s)' % (nutrients.ix[x]['NutrDesc'], nutrients.ix[x]['Units']), 
+                                      list(nutrients.index))
 
-def get_correlations(data, col_x, col_y, transform_x=None, transform_y=None):
+def data_corrs(data, col_x, col_y, transform_x=None, transform_y=None):
+    
+    '''Given a pd.DataFrame populated with the output of reformat_foods (use
+    read_csv()), and either a column name or a list of column names as col_x
+    and col_y, returns two dataframes, one of correlations and one of the 
+    number of observations used (any entries that are blank in one or the
+    other are not used). 
+    '''
     
     if iterable(col_x) == 0 or isinstance(col_x, str):
         col_x = [col_x]
@@ -99,3 +122,28 @@ def get_correlations(data, col_x, col_y, transform_x=None, transform_y=None):
             counts.ix[cx][cy] = len(data_pts)
     
     return corrs, counts
+
+def single_nutrient_corrs(data, column, transform_x=None, transform_y=None):
+    
+    '''Return a data frame of all nutrient correlations versus a single
+    nutrient and the number of observations for each correlation. 
+    '''
+    
+    nutr_cols = nutrient_columns()
+    (corrs, counts) = data_corrs(data, nutr_cols, column, 
+                                 transform_x, transform_y)
+    corrs['n'] = counts[column]
+    return corrs.sort(column)
+
+def generate_magnesium_scatterplots(data, scatter_dir, cols):
+    
+    '''Generates log1p scatterplots of magnesium vs. specified cols.'''
+    
+    mg_col = 'Magnesium, Mg (mg)'
+    for col in cols:
+        scatter(log1p(data[mg_col]), log1p(data[col]))
+        xlabel('log1p(%s)' % mg_col)
+        ylabel('log1p(%s)' % col)
+        filename = '%s - %s.png' % (mg_col, col)
+        savefig(os.path.join(scatter_dir, filename))
+        close()
