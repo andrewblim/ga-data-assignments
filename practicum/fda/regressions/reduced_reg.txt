@@ -4,7 +4,7 @@ Dep. Variable:     Magnesium, Mg (mg)   R-squared:                       0.785
 Model:                            OLS   Adj. R-squared:                  0.785
 Method:                 Least Squares   F-statistic:                     5642.
 Date:                Mon, 29 Oct 2012   Prob (F-statistic):               0.00
-Time:                        19:23:35   Log-Likelihood:                -4529.7
+Time:                        19:26:43   Log-Likelihood:                -4529.7
 No. Observations:                6184   AIC:                             9069.
 Df Residuals:                    6179   BIC:                             9103.
 Df Model:                           4                                         
