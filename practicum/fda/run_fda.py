@@ -21,6 +21,9 @@ if __name__ == '__main__':
     parser.add_option('--full-reg', action='store_true', 
                       dest='full_reg',
                       help='generate log-transformed nutrient regression')
+    parser.add_option('--full-reg-variation', action='store_true', 
+                      dest='full_reg_variation',
+                      help='see which features in the full regression generate variation')
     parser.add_option('--bootstrap', action='store_true', 
                       dest='bootstrap',
                       help='generate coefficients from bootstrap')
@@ -30,31 +33,45 @@ if __name__ == '__main__':
     
     (options, args) = parser.parse_args()
     
-    filename = 'nutr_by_food.csv'
+    nutr_filename = 'nutr_by_food.csv'
+    mg_label = 'Magnesium, Mg (mg)'
     scatter_dir = 'scatter'
     reg_dir = 'regressions'
     
-    if options.food_detail is True or options.run_all is True:
-        generate_food_detail_csv(filename)
-        print('%s generated.' % filename)
-        
+    # Problem 1
+    
+    if any([options.food_detail, options.run_all]):
+        generate_food_detail_csv(nutr_filename)
+        print('Food detail generated to %s.' % nutr_filename)
+    
+    # read in data from problem 1 - prerequisite for remaining problems
+    
     if any([options.run_all, options.magnesium_corrs, 
             options.magnesium_scatter, options.full_reg,
             options.bootstrap, options.reduced_reg]):
-        data = pd.read_csv(filename)
-        
+        data = pd.read_csv(nutr_filename)
+    
+    # Correlation diagnostic - see what is correlated to magnesium content. 
+    # Used to figure out what to plot in problem 2. 
+    
     if options.magnesium_corrs is True:
-        corrs = single_nutrient_corrs(data, 'Magnesium, Mg (mg)', 
-                                      transform_x=log1p, transform_y=log1p)
+        corrs = single_nutrient_corrs(data, 
+                                      mg_label, 
+                                      transform_x=log1p, 
+                                      transform_y=log1p)
         print(corrs)
-        
+    
+    # Problem 2
+    
     if options.magnesium_scatter is True or options.run_all is True: 
-        cols = ['Potassium, K (mg)', 
-                'Phosphorus, P (mg)', 
-                'Manganese, Mn (mg)', 
-                'Fatty acids, total trans (g)']
-        generate_magnesium_scatterplots(data, scatter_dir, cols)
-        print('Magnesium scatterplots generated to dir %s.' % scatter_dir)
+        scatter_cols = ['Potassium, K (mg)', 
+                        'Phosphorus, P (mg)', 
+                        'Manganese, Mn (mg)', 
+                        'Fatty acids, total trans (g)']
+        generate_magnesium_scatterplots(data, scatter_dir, scatter_cols)
+        print('Magnesium scatterplots generated to directory %s.' % scatter_dir)
+    
+    # label_cols are the nutrients found on a standard food label
     
     if any([options.full_reg, options.bootstrap, 
             options.reduced_reg, options.run_all]):
@@ -67,45 +84,59 @@ if __name__ == '__main__':
                       'Potassium, K (mg)',
                       'Fiber, total dietary (g)',
                       'Sugars, total (g)',
-                      'Calcium, Ca (mg)',
-                      'Iron, Fe (mg)',
-                      'Zinc, Zn (mg)',
-                      'Phosphorus, P (mg)',
-                      'Copper, Cu (mg)',
-                      'Manganese, Mn (mg)',
-                      'Thiamin (mg)',
-                      'Riboflavin (mg)',
-                      'Niacin (mg)',
-                      'Vitamin A, RAE (mcg_RAE)',
-                      'Vitamin B-6 (mg)',
-                      'Vitamin B-12 (mcg)',
-                      'Vitamin C, total ascorbic acid (mg)']
+                      'Protein (g)']
+    
+    # Problem 3
     
     if options.full_reg is True or options.run_all is True:
-        results = regress_log1p_dataframe(data, 'Magnesium, Mg (mg)', label_cols)
-        f = open(os.path.join(reg_dir, 'full_reg.txt'), 'w')
+        
+        results = regress_log1p_dataframe(data, mg_label, label_cols)
+        
+        full_reg_path = os.path.join(reg_dir, 'full_reg.txt')
+        full_reg_pickle_path = os.path.join(reg_dir, 'full_reg.pkl')
+        f = open(full_reg_path, 'w')
         f.write(results.summary().__str__() + '\n')
         f.close()
-        results.save
-        f = open(os.path.join(reg_dir, 'full_reg.pkl'), 'wb')
+        print('Regression summary output to %s.' % full_reg_path)
+        f = open(full_reg_pickle_path, 'wb')
         pickle.dump(results, f)
         f.close()
+        print('Regression results pickled to %s.' % full_reg_pickle_path)
+        
         mean_error = abs(results.resid).mean()
         mean_expm1_error = abs(expm1(results.model.endog) - expm1(results.predict())).mean()
-        print('Average absolute error log1p(magnesium): %f' % mean_error)
-        print('Average absolute error magnesium: %f' % mean_expm1_error)
-        print('Full regression files generated to dir %s.' % reg_dir)
+        print('Average absolute error of log1p(magnesium): %f' % mean_error)
+        print('Average absolute error of magnesium: %f' % mean_expm1_error)
+    
+    # Check which coefficients in the full regression generate variation in
+    # predicted magnesium. 
+    
+    if options.full_reg_variation is True:
+        
+        full_reg_pickle_path = os.path.join(reg_dir, 'full_reg.pkl')
+        results = pickle.load(open(full_reg_pickle_path, 'rb'))
+        print('%40s %12s %12s' % ('Feature', 'Mean * coef', 'SD * coef'))
+        for i in range(len(results.model.exog_names)):
+            print('%40s %12.4f %12.4f' % (results.model.exog_names[i],
+                                          results.model.exog[i].mean() * results.params[i],
+                                          results.model.exog[i].std() * results.params[i]))
+    
+    # Problems 4 and 5
     
     if options.bootstrap is True or options.run_all is True:
-        coefs = bootstrap_log1p_dataframe(data, 'Magnesium, Mg (mg)', 
+        
+        coefs = bootstrap_log1p_dataframe(data,
+                                          mg_label, 
                                           label_cols, 
-                                          sample_frac=0.25, n=1000)
+                                          sample_frac=0.1, 
+                                          n=1000)
         coefs.to_csv('bootstrap_data/coefs.csv', index=False)
+        print('Bootstrap coefs generated to bootstrap_data/coefs.csv.')
+        print('95% confidence interval based on bootstrapping (sample 10% of population):')
         for col in coefs.columns:
             print('%40s : [%8.4f, %8.4f]' % (col, 
                                              coefs[col].quantile(0.025), 
                                              coefs[col].quantile(0.975)))
-        print('Bootstrap coefs generated to bootstrap_data/coefs.csv.')
     
     if options.reduced_reg is True or options.run_all is True:
         sig_cols = ['Sodium, Na (mg)',

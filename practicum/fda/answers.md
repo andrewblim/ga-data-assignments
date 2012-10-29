@@ -4,30 +4,35 @@
 Andrew Lim
 22 Oct 2012
 
-All problems can be run with `python run_fda.py --all-problems`. Individual problems can be run with flags as specified below. 
+All problems can be run with `python run_fda.py --all-problems`. Individual problems can be run with flags as specified below, though each problem may assume you've run the prior problems as well. 
 
 ### Problem 1
 
-I did the initial cleanup work using Google Refine. The JSON files that describe the transformations I did are in `data/google-refine`. I actually think the entirety of problem 1, transforming the data in this fashion, could theoretically be done in Refine, but I found Refine to be crashy for NUT_DATA-sized projects. The cleaned-up csvs are in `data`: 
+I did initial cleanup work using Google Refine. The JSON files that describe the transformations I did are in `data/google-refine`. I actually think the entirety of problem could theoretically be done in Refine, but I found it to be crashy for NUT_DATA-sized projects. The cleaned-up csvs are in: 
 
 - `data/FD_GROUP.csv`
 - `data/FOOD_DES.csv`
 - `data/NUT_DATA.csv`
 - `data/NUTR_DEF.csv`
 
-To generate the reformatted food data to `nutr_by_food.csv`, run `python run_fda.py --food-detail`. This generates a column for every single nutrient. The food label filtration is done later, see problem 3. 
+To generate the reformatted food data to `nutr_by_food.csv`, run `python run_fda.py --food-detail`. This generates a column for every single nutrient, whether commonly found on food labels or not. The food label filtration is done in Problem 3. 
 
 ### Problem 2
 
-I found it useful to apply a log1p transformation to the nutrient data to get less skewed distributions. 
+I found it useful to apply a log1p transformation to nutrient contents to reduce the skew. In everything that follows I'm actually referring to correlations of log1p-transformed data. 
 
-To figure out what columns to plot, I calculated the correlations of magnesium against other nutrients. You can generate the table of such correlations with `python run_fda.py --magnesium_corrs` (this is not run as part of the `--all-problems` command, as I just used it as a sort of diagnostic). I disregarded correlations with too few observations (for example, "Adjusted Protein" had only 2 observations and so naturally the correlation was 1). 
+To figure out what relationships to plot, I calculated the correlations of magnesium against other nutrients. You can generate a table of such correlations with `python run_fda.py --magnesium_corrs` (this is not run as part of `--all-problems`, as I used it as a sort of diagnostic). I disregarded correlations with too few observations (for example, "Adjusted Protein" had only 2 observations and so naturally the correlation was 1). 
 
 Some of the highest relevant positive correlations were with potassium, phosphorus, and manganese, which had (log1p-transformed) correlations of 0.7638, 0.7361, and 0.6006, respectively. The negative correlations were generally not as strong. 
 
-There were some graphs that seemed to show a relationship between magnesium and _variance_ of nutrient level. An example is the total trans fatty acids, which had a log1p-transformed correlation of -0.4189. From the scatterplot, you can see that low-magnesium foods have a wide variety of trans fatty acid levels, some very high but some very low, and high-magnesium foods have both lower fatty acid levels overall and less variation in levels. Manganese shows this to a lesser degree in the opposite direction; low-magnesium foods have consistently low levels of manganese, and high-magnesium foods have both higher levels of manganese and higher variation in those levels. 
+There were some graphs that seemed to show a relationship between magnesium and _variance_ of nutrient level. An example is total trans fatty acids, which had a correlation of -0.4189. From the scatterplot, you can see that low-magnesium foods have a wide variety of trans fatty acid levels and that high-magnesium foods have both lower fatty acid levels overall and less variation in fat content. Manganese shows this to a lesser degree in the opposite direction (higher magnesium > higher variation). 
 
-To generate scatterplots for magnesium versus potassium, phosphorus, manganese, and trans fatty acids, run `python run_fda.py --magnesium-scatter`. They will be produced into the `scatter` directory. 
+To generate scatterplots for magnesium versus potassium, phosphorus, manganese, and trans fatty acids, run `python run_fda.py --magnesium-scatter`. They will be produced to:  
+
+- `scatter/Magnesium, Mg (mg) - Fatty acids, total trans (g).png`
+- `scatter/Magnesium, Mg (mg) - Manganese, Mn (mg).png`
+- `scatter/Magnesium, Mg (mg) - Phosphorus, P (mg).png`
+- `scatter/Magnesium, Mg (mg) - Potassium, K (mg).png`
 
 ### Problem 3
 
@@ -42,57 +47,30 @@ The features I found on nutrition data labels for which there were columns in SR
 - Potassium, K
 - Fiber, total dietary
 - Sugars, total
-- Calcium, Ca
-- Iron, Fe
-- Zinc, Zn
-- Phosphorus, P
-- Copper, Cu
-- Manganese, Mn
-- Thiamin
-- Riboflavin
-- Niacin
-- Vitamin A
-- Vitamin B6
-- Vitamin B12
-- Folate
+- Protein
 
-Vitamin A and folate are reported in a few different ways - I used the "equivalents" columns, which are the "RAE" column (retinol activity equivalents) for Vitamin A and the "DFE" column (dietary folate equivalents) for folate. These are intended to measure overall nutritional content of a few different ways the body can acquire these nutrients. 
+There are also several other nutrients that are listed solely in terms of percentage of daily recommended value, without actual grams/milligrams. I've omitted these as I'm interpreting the problem to determine how to figure out precise magnesium content from a food label. Besides, magnesium is already one such nutrient and so in some sense using them defeats the stated purpose of the project. :)
 
-The full data set is 7538 foods, but since I can only use rows for which all of these values are present, the regression ended up being on only 711 of those 7538 foods. Run `python run_fda.py --full-reg` to generate the regression summary to `regressions/full_reg.txt` and the pickled statsmodels results object to `regressions/full_reg.pkl`. As before, these are on the log1p-transformed data. 
+The full data set is 7538 foods, but since I can only use rows for which all of these values and a value for magnesium are present, the regression ended up being on only 921 of those 7538 foods. Run `python run_fda.py --full-reg` to generate the regression summary to `regressions/full_reg.txt` and the pickled statsmodels results object to `regressions/full_reg.pkl`. As before, these are on the log1p-transformed data. 
 
-The R^2 of the full regression is 0.819. The coefficients significant at the 5% threshold or better are: 
+The R^2 of the full regression is 0.786. The coefficients not significant at a 5% threshold were the "total saturated" and "total trans" fatty acid features and the constant term. The average absolute error of the full model (including statistically insignificant coefficients) in log1p-space is 0.284465. When translated back to regular mg of magnesium, the average absolute error is 12.306958 mg. 
 
-- Sodium, Na
-- Potassium, K
-- Fiber, total dietary
-- Sugars, total
-- Phosphorus, P
-- Copper, Cu
-- Manganese, Mn
-- Thiamin
-- Niacin
-- Vitamin B12
+For a model I could keep in my head, the first clear thing to do would be to drop the two features with non-statistically significant coefficients. To make it even simpler, we can eliminate the coefficients that generate the least variation in outcomes, replacing them with just a constant of coefficient * mean. We can approximate the amount of variation generated by multiplying each feature's coefficient by its standard deviation. To see this, after you've run the full regression, run `python run_fda.py --full-reg-variation` (not run as part of `--all-problems` either as it's also a diagnostic). 
 
-The constant term was in fact not statistically significant. There was no predictive significance added by aggregating the fatty acid columns into a single feature. These findings suggest that we can actually drop several of these coefficients (and incorporate more data points, since we'll have to drop fewer rows), although it looks like we'll be doing that in later problems. 
-
-The average absolute error of the full model (including statistically insignificant coefficients) in log1p-space is 0.250. When translated back to regular mg of magnesium, the average absolute error is 11.759 mg. 
-
-For a model I could keep in my head, the first order of business would be to consider just the above features. To reduce it further, we can drop the features with smallest coefficients. Before doing that you have to check whether the range of values for the different features varies substantially - a small coefficient could be more important than a large coefficient if the small coefficient's feature had much larger values. I checked the standard deviations of the features and they're all between 1.74 and 2.16. The features we would drop in this case would be sodium, sugar, and niacin. If I really wanted to make it simple to remember, thiamin and vitamin B12's coefficients are around -0.2 and the others are all around +0.25, so I'd just round that way. 
+If I were to cut it down to a really simple 3-feature model based on this, I'd keep just potassium, fiber, and protein. 
 
 ### Problems 4 and 5
 
-Run `python run_fda.py --bootstrap` to generate bootstrap data to `bootstrap_data/coefs.csv` based on a resampling size of 25% (so each regression is based on floor(0.25 * 711) = 177 of the 711 available entries) and to print out the 95% confidence interval of parameters. The exact values will of course differ from run to run, but what I found was that the coefficients whose 95% bands did not include 0 generally included:
+Run `python run_fda.py --bootstrap` to generate bootstrap data to `bootstrap_data/coefs.csv` based on a resampling size of 10% (so each regression is based on 10% * 921 = 92 entries) and to print out the 95% confidence interval of parameters based on this bootstrapping. The exact values will of course differ from run to run, but what I found was that the coefficients whose 95% bands did not include 0 included:
 
 - Sodium, Na
 - Potassium, K
 - Fiber, total dietary
-- Phosphorus, P
-- Manganese, Mn
-- Vitamin B12
+- Protein
 
-This is a subset of the features mentioned in Problem 3. These features are the ones where the hypothesis of a 0 coefficient was rejected at 95% by this procedure. The width of the confidence intervals correspond to uncertainty about the predicted values. Of the above six features, manganese has the widest interval, indicating greatest uncertainty; while the hypothesis of a zero coefficient is rejected with good certainty, the actual coefficient to use to predict magnesium is unclear. 
+Sugar was on the cusp, sometimes in and sometimes out at 1000 samples, but it's out at 10000 samples so I'm dropping it. Of these four, fiber and protein have the widest bands, with potassium close behind, and sodium a distant last place. In all cases the regression is confident that the coefficient is nonzero, but the wider intervals indicate greater uncertainty about exactly what that value is. 
 
-Based on these results, a one-sentence heuristic for finding high-magnesium foods is to look for high potassium, fiber, and phosphorus, and to avoid high sodium and vitamin B12. 
+Based on these results, a one-sentence heuristic for finding high-magnesium foods is to look for high potassium, fiber, and protein, and to avoid high sodium. 
 
 ### Problem 6
 

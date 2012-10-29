@@ -88,7 +88,11 @@ def generate_food_detail_csv(output_filename,
         sys.stdout.flush()
 
 def nutrient_columns(nutr_def_filename='NUTR_DEF.csv'):
-    '''Return a list of nutrient columns as produced by generate_food_detail_csv()'''
+    
+    '''Return a list of nutrient columns as produced by generate_food_detail_csv(). 
+    Helper function. 
+    '''
+    
     nutrients = pd.read_csv(nutr_def_filename, index_col='Nutr_No')
     return map(lambda x: '%s (%s)' % (nutrients.ix[x]['NutrDesc'], nutrients.ix[x]['Units']), 
                                       list(nutrients.index))
