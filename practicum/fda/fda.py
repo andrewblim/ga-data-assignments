@@ -1,8 +1,10 @@
 from pylab import *
 import csv
 import itertools
-import pandas as pd
 import os.path
+import pandas as pd
+import random as pyrandom
+import statsmodels.api as sm
 import sys
 
 def generate_food_detail_csv(output_filename,
@@ -147,3 +149,32 @@ def generate_magnesium_scatterplots(data, scatter_dir, cols):
         filename = '%s - %s.png' % (mg_col, col)
         savefig(os.path.join(scatter_dir, filename))
         close()
+
+def reduce_data(data, cols):
+    
+    '''Reduces a data frame to include only the specified columns and only rows
+    where all columns are non-nan.'''
+    
+    reduced_data = data[cols]
+    non_nan = all(logical_not(isnan(reduced_data)), axis=1)
+    return reduced_data.ix[non_nan]
+
+def regress_log1p_dataframe(data, col_y, cols_x):
+    rdata = reduce_data(data, cols_x + [col_y])
+    y = log1p(rdata[col_y])
+    X = sm.add_constant(log1p(rdata[cols_x]), prepend=False)
+    results = sm.OLS(y, X).fit()
+    return results
+    
+def bootstrap_log1p_dataframe(data, col_y, cols_x, sample_frac, n):
+    rdata = reduce_data(data, cols_x + [col_y])
+    coefs = []
+    for i in range(n):
+        sample_size = int(sample_frac * len(rdata))
+        sdata = rdata.ix[pyrandom.sample(rdata.index, sample_size)]
+        y = log1p(sdata[col_y])
+        X = sm.add_constant(log1p(sdata[cols_x]), prepend=False)
+        results = sm.OLS(y, X).fit()
+        coefs.append(results.params)
+    return pd.DataFrame(coefs)
+    
