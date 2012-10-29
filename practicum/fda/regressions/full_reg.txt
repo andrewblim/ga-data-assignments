@@ -1,0 +1,30 @@
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:     Magnesium, Mg (mg)   R-squared:                       0.786
+Model:                            OLS   Adj. R-squared:                  0.784
+Method:                 Least Squares   F-statistic:                     334.6
+Date:                Mon, 29 Oct 2012   Prob (F-statistic):          1.04e-296
+Time:                        19:23:30   Log-Likelihood:                -680.73
+No. Observations:                 921   AIC:                             1383.
+Df Residuals:                     910   BIC:                             1437.
+Df Model:                          10                                         
+==========================================================================================================
+                                             coef    std err          t      P>|t|      [95.0% Conf. Int.]
+----------------------------------------------------------------------------------------------------------
+Fatty acids, total monounsaturated (g)    -0.1059      0.046     -2.321      0.020        -0.195    -0.016
+Fatty acids, total polyunsaturated (g)     0.1485      0.037      4.065      0.000         0.077     0.220
+Fatty acids, total saturated (g)           0.0222      0.033      0.678      0.498        -0.042     0.086
+Fatty acids, total trans (g)               0.0097      0.046      0.210      0.834        -0.081     0.100
+Cholesterol (mg)                          -0.0744      0.017     -4.443      0.000        -0.107    -0.042
+Sodium, Na (mg)                           -0.0776      0.011     -6.762      0.000        -0.100    -0.055
+Potassium, K (mg)                          0.4158      0.025     16.784      0.000         0.367     0.464
+Fiber, total dietary (g)                   0.3632      0.035     10.420      0.000         0.295     0.432
+Sugars, total (g)                          0.1434      0.017      8.644      0.000         0.111     0.176
+Protein (g)                                0.4866      0.035     14.064      0.000         0.419     0.554
+const                                     -0.0840      0.104     -0.810      0.418        -0.287     0.119
+==============================================================================
+Omnibus:                      350.065   Durbin-Watson:                   1.369
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):             4560.208
+Skew:                          -1.357   Prob(JB):                         0.00
+Kurtosis:                      13.558   Cond. No.                         55.8
+==============================================================================
