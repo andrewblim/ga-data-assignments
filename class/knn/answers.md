@@ -3,9 +3,23 @@
 
 Andrew Lim / 8 Nov 2012
 
-To run everything, run `python run_knn.py`. The output is the `predictions.csv` file, a `summary.txt` file that outputs `summary()` on the statsmodels linear regression model object, and several `.pkl` files representing the pickled model result objects. 
+### Execution
 
-`pip freeze` on my virtualenv: 
+To run model fitting, run `python run_knn.py`. The output is the `predictions.csv` file, a `summary.txt` file that outputs `summary()` on the statsmodels linear regression model object, and several `.pkl` files representing the pickled model result objects. 
+
+To generate histograms of the data (not directly part of the assignment, but I used it to determine what kind of transformations to apply), run `python run_knn.py histograms`. The output is to the `histograms` directory. 
+
+### Answers
+
+I ran two analyses on the white wine subset of the [Wine Quality Data Set](http://archive.ics.uci.edu/ml/datasets/Wine+Quality). Some of the variables were positively skewed; I tried to fix these to be more normal with log1p transforms. The variables which the transform helped with were "residual sugar", "free sulfur dioxide", and "volatile acidity". I also transformed "total sulfur dioxide" and "free acidity" to keep them on the same scale as the latter two previously transformed variables. 
+
+In the first analysis I used quality as the outcome variable. I used linear regression with a constant and also kNN with 3 and 10 neighbors, and each of those with both a regressor (treats the output value as continuous) and a classifier (attempt
+
+In the second analysis I used 
+
+## pip freeze
+
+In case there is some issue about getting the code to work, I'll always include this.
 
 	Jinja2==2.6
 	PyYAML==3.10
@@ -32,7 +46,3 @@ To run everything, run `python run_knn.py`. The output is the `predictions.csv` 
 	statsmodels==0.5.0
 	tornado==2.4
 	wsgiref==0.1.2
-
-### Answers
-
-I ran analysis on the white wine subset of the [Wine Quality Data Set](http://archive.ics.uci.edu/ml/datasets/Wine+Quality), using quality as the outcome variable. I used linear regression with a constant and also kNN with 1, 3, 5, and 10 neighbors, and each of those with both a regressor (treats the output value as continuous) and a classifier () The 1-NN model is just done
