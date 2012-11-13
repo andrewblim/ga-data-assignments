@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
 
 from bs4 import BeautifulSoup
+from sklearn.neighbors import KNeighborsRegressor
 import datetime
+import math
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
+import numpy as np
 import os
 import pandas as pd
 import re
 import urllib2
 import warnings
 
-def temperature_csv(output_filename='temperature.csv',
-                    station_url='http://www.nws.noaa.gov/mdl/gfslamp/docs/stations_info_07172012.shtml', 
-                    data_url='http://www.nws.noaa.gov/mdl/gfslamp/lavlamp.shtml',
-                    verbose=False):
-    station_df = station_list(station_url)
-    forecast(data_url, station_df, verbose=verbose).to_csv(output_filename, index=False)
-
 def station_list(url):
+    '''Given the url of the NOAA list of stations page, returns a dataframe of
+    stations, names, states, and lats/lons. 
+    '''
     
     soup = BeautifulSoup(urllib2.urlopen(url))
     d = {'station_code': [],
@@ -46,6 +45,10 @@ def station_list(url):
     return pd.DataFrame(d)
 
 def forecast(url, station_df, verbose=True):
+    '''Given the url of the NOAA's full text bulletin page and a dataframe of
+    stations as returned by station_list(), returns a dataframe of times (in 
+    UTC terms), temperatures, and lats/lons. 
+    '''
     
     soup = BeautifulSoup(urllib2.urlopen(url))
     d = {'utc_timestamp' : [],
@@ -83,9 +86,9 @@ def forecast(url, station_df, verbose=True):
             tmp_row_index = [line[1:4] == 'TMP' for line in raw_lines].index(True)
             tmp_row = raw_lines[tmp_row_index][5:]
         except ValueError:
-            continue  # many stations do not have a TMP line, not a problem
+            continue  # many stations do not have a TMP line; just skip these
         
-        if verbose: print('%s, %s' % (station_code, last_timestamp))
+        if verbose: print('%s, base time %s' % (station_code, last_timestamp))
         
         for i in range(25):
             hour = int(utc_row[3*i : 3*(i+1)])
@@ -109,17 +112,17 @@ def forecast(url, station_df, verbose=True):
     
     return pd.DataFrame(d)
 
-def colorplot(forecast_data, output_dir='colorplot', verbose=True):
+def colorplot(forecast_data, output_dir, verbose=True):
+    '''Given either a dataframe as returned by forecast() or the corresponding
+    csv file, outputs a series of colored scatterplots showing forecasted 
+    temperature by location. 
+    '''
     
-    if type(forecast_data) is str:
-        data = pd.read_csv('temperature.csv')
-    else:
-        data = forecast_data
+    if isinstance(forecast_data, basestring): data = pd.read_csv(forecast_data)
+    else: data = forecast_data
     
-    try:
-        os.mkdir(output_dir)
-    except OSError:
-        pass
+    try: os.mkdir(output_dir)
+    except OSError: pass
     
     i = 0
     for timestamp in sorted(set(data.utc_timestamp)):
@@ -128,7 +131,6 @@ def colorplot(forecast_data, output_dir='colorplot', verbose=True):
         histdata = data[np.logical_and(data.utc_timestamp == timestamp,
                                        np.logical_not(np.isnan(data.temperature)))]
         fig = plt.figure()
-        
         ax = fig.add_subplot(111)
         sc = ax.scatter(histdata.longitude, histdata.latitude, 
                         c=histdata.temperature,
@@ -143,11 +145,97 @@ def colorplot(forecast_data, output_dir='colorplot', verbose=True):
         ax.set_ylabel('Latitude', size='small')
         ax.set_yticklabels([(u'%.0f\u00B0N' % a if a > 0 else u'%.0f\u00B0S' % -a) for a in ax.get_yticks()], 
                            fontsize='small')
-        output_filename = '%s.png' % datetime.datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S').strftime('%Y%m%d_%H%M')
         
         cbar = fig.colorbar(sc, orientation='vertical')
         cbar.set_label(u'Forecast temperature (\u00B0F)')
         
+        output_filename = '%s.png' % datetime.datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S').strftime('%Y%m%d_%H%M')
         fig.savefig(os.path.join(output_dir, output_filename))
         plt.close(fig)
-        return cbar
+
+def knn_forecast_models(forecast_data, **kwargs):
+    '''Given either a dataframe as returned by forecast() or the corresponding
+    csv file, outputs a dictionary mapping timestamps to kNN models. The kwargs
+    are passed to sklearn's KNeighborsRegressor. The keys are datetime objects,
+    not string representations. 
+    '''
+    
+    if isinstance(forecast_data, basestring): data = pd.read_csv(forecast_data)
+    else: data = forecast_data
+    
+    models = {}
+    for timestamp in sorted(set(data.utc_timestamp)):
+        index = np.logical_and(data.utc_timestamp == timestamp, 
+                               np.logical_not(np.isnan(data.temperature)))
+        predictors = data[['latitude', 'longitude']][index]
+        response = data.temperature[index]
+        timestamp = datetime.datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
+        models[timestamp] = KNeighborsRegressor(**kwargs).fit(predictors, response)
+    
+    return models
+
+def knn_predict(model, lat, lon):
+    '''Given a knn model and either single lat/lon values or equal-sized lists
+    of lats and lons, return predicted values. 
+    '''
+    
+    if '__iter__' in dir(lat) and '__iter__' in dir(lon):
+        test_data = pd.DataFrame({'latitude': lat, 'longitude': lon})
+    else:
+        test_data = pd.DataFrame({'latitude': [lat], 'longitude': [lon]})
+    return model.predict(test_data)
+
+def knn_prediction_grid(forecast_data, model_dict, lat_range, lon_range,
+                        output_dir, verbose=True):
+    
+    if isinstance(forecast_data, basestring): data = pd.read_csv(forecast_data)
+    else: data = forecast_data
+
+    try: os.mkdir(output_dir)
+    except OSError: pass
+    
+    for timestamp in sorted(set(data.utc_timestamp)):
+        
+        if verbose: print('Graphing kNN (%s) %s...' % (output_dir, timestamp))
+        
+        timestamp_as_dt = datetime.datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
+        lats = [lat for lat in lat_range for lon in lon_range]
+        lons = [lon for lat in lat_range for lon in lon_range]
+        predictions = knn_predict(model_dict[timestamp_as_dt], lats, lons)
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        sc = ax.scatter(lons, lats,
+                        c=predictions,
+                        s=8,
+                        cmap=cm.coolwarm,
+                        marker='o',
+                        edgecolors='none')
+        
+        inrange_index = np.logical_and(data.utc_timestamp == timestamp,
+                                       np.logical_not(np.isnan(data.temperature)))
+        inrange_index = np.logical_and(inrange_index, data.latitude >= min(lat_range))
+        inrange_index = np.logical_and(inrange_index, data.latitude <= max(lat_range))
+        inrange_index = np.logical_and(inrange_index, data.longitude >= min(lon_range))
+        inrange_index = np.logical_and(inrange_index, data.longitude <= max(lon_range))
+        inrange_data = data[inrange_index]
+        sc2 = ax.scatter(inrange_data.longitude, inrange_data.latitude,
+                         c=inrange_data.temperature,
+                         s=12,
+                         cmap=cm.coolwarm,
+                         marker='D')
+        
+        ax.set_title(timestamp)
+        ax.set_xlabel('Longitude', size='small')
+        ax.set_xticklabels([(u'%.0f\u00B0E' % a if a > 0 else u'%.0f\u00B0W' % -a) for a in ax.get_xticks()], 
+                           fontsize='small')
+        ax.set_ylabel('Latitude', size='small')
+        ax.set_yticklabels([(u'%.0f\u00B0N' % a if a > 0 else u'%.0f\u00B0S' % -a) for a in ax.get_yticks()], 
+                           fontsize='small')
+    
+        cbar = fig.colorbar(sc, orientation='vertical')
+        cbar.set_label(u'Forecast temperature (\u00B0F)')
+        
+        output_filename = '%s.png' % timestamp_as_dt.strftime('%Y%m%d_%H%M')
+        fig.savefig(os.path.join(output_dir, output_filename))
+        plt.close(fig)
