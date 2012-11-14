@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pandas as pd
+import random
 import re
+import statsmodels.api as sm
 import urllib2
 import warnings
 
@@ -127,7 +129,7 @@ def colorplot(forecast_data, output_dir, verbose=True):
     i = 0
     for timestamp in sorted(set(data.utc_timestamp)):
         
-        if verbose: print('Graphing %s...' % timestamp)
+        if verbose: print('Graphing scatter %s...' % timestamp)
         histdata = data[np.logical_and(data.utc_timestamp == timestamp,
                                        np.logical_not(np.isnan(data.temperature)))]
         fig = plt.figure()
@@ -187,6 +189,11 @@ def knn_predict(model, lat, lon):
 
 def knn_prediction_grid(forecast_data, model_dict, lat_range, lon_range,
                         output_dir, verbose=True):
+    '''Given forecast data, a dictionary of models as produced by 
+    knn_forecast_models(), and a range of latitude and longitude values, 
+    produces an image with a grid of predicted temperatures for each combo
+    (lat, lon) for each timestamp in forecast_data. 
+    '''
     
     if isinstance(forecast_data, basestring): data = pd.read_csv(forecast_data)
     else: data = forecast_data
@@ -212,6 +219,7 @@ def knn_prediction_grid(forecast_data, model_dict, lat_range, lon_range,
                         marker='o',
                         edgecolors='none')
         
+        # why wouldn't np.logical_and support multiple arguments?!
         inrange_index = np.logical_and(data.utc_timestamp == timestamp,
                                        np.logical_not(np.isnan(data.temperature)))
         inrange_index = np.logical_and(inrange_index, data.latitude >= min(lat_range))
@@ -239,3 +247,43 @@ def knn_prediction_grid(forecast_data, model_dict, lat_range, lon_range,
         output_filename = '%s.png' % timestamp_as_dt.strftime('%Y%m%d_%H%M')
         fig.savefig(os.path.join(output_dir, output_filename))
         plt.close(fig)
+
+def knn_lr_crossvalidation(forecast_data, folds, verbose=True, **kwargs):
+    
+    if isinstance(forecast_data, basestring): data = pd.read_csv(forecast_data)
+    else: data = forecast_data
+    
+    timestamp = sorted(set(data.utc_timestamp))[0]
+    data = data[np.logical_and(data.utc_timestamp == timestamp,
+                               np.logical_not(np.isnan(data.temperature)))]
+    
+    n = len(data)
+    shuffled_indices = list(data.index)
+    random.shuffle(shuffled_indices)
+    xv_indices = []
+    for i in range(folds-1):
+        xv_indices.append(shuffled_indices[int(i*n/float(folds)) : int((i+1)*n/float(folds))])
+    xv_indices.append(shuffled_indices[int((folds-1)*n/float(folds)) :])
+    
+    rmse_knn = 0
+    rmse_lr = 0
+    for i in range(len(xv_indices)):
+        xv_data = data.ix[xv_indices[i]]
+        train_data = data.ix[filter(lambda x: x not in xv_indices[i], shuffled_indices)]
+        predictors = train_data[['latitude', 'longitude']]
+        response = train_data.temperature
+        model_knn = KNeighborsRegressor(**kwargs).fit(predictors, response)
+        model_lr = sm.OLS(response, sm.add_constant(predictors, prepend=True)).fit()
+        pred_knn = model_knn.predict(xv_data[['latitude', 'longitude']])
+        pred_lr = model_lr.predict(sm.add_constant(xv_data[['latitude', 'longitude']], prepend=True))
+        rmse_knn += sum((pred_knn - xv_data.temperature)**2)
+        rmse_lr += sum((pred_lr - xv_data.temperature)**2)
+    rmse_knn = (rmse_knn / float(n))**0.5
+    rmse_lr = (rmse_lr / float(n))**0.5
+    
+    if verbose:
+        print('RMSE for %s:' % timestamp)
+        print('RMSE kNN: %0.4f' % rmse_knn)
+        print('RMSE linear regression: %0.4f' % rmse_lr)
+    
+    return (rmse_knn, rmse_lr)

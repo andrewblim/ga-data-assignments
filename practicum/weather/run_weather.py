@@ -14,7 +14,7 @@ if __name__ == '__main__':
         station_df = station_list(station_url)
         forecast(data_url, station_df, verbose=verbose).to_csv(csv_filename, index=False)
     
-    if len(sys.argv) == 1 or sys.argv[1] in ['colorplot', 'knn']:
+    if len(sys.argv) == 1 or sys.argv[1] in ['colorplot', 'knn', 'xv']:
         forecast_data = pd.read_csv(csv_filename)
     
     if len(sys.argv) == 1 or sys.argv[1] == 'colorplot':
@@ -45,3 +45,9 @@ if __name__ == '__main__':
                             np.linspace(-70,-80,101),
                             'grid_5nn',
                             verbose=verbose)
+    
+    if len(sys.argv) == 1 or sys.argv[1] == 'xv':
+        knn_lr_crossvalidation(forecast_data, folds=5, 
+                               n_neighbors=5,
+                               warn_on_equidistant=False,
+                               verbose=verbose)
