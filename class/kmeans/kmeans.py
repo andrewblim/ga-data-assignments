@@ -38,7 +38,7 @@ def plant_cluster(habitat_data, state_dict, output_dir=None, n_clusters=8,
         else: print('Fitting model %s (output to dir %s)...' % (name, output_dir))
     for i in range(n_clusters):
         n_preds = len(habitat_data[pred == i])
-        probs.append(sorted([(state, sum(habitat_data[state][pred == i])/float(n_preds))
+        probs.append(sorted([(state, sum(habitat_data[state][pred == i]), n_preds)
                              for state in state_dict.keys()], 
                             key=lambda x: x[1],
                             reverse=True))
@@ -79,9 +79,9 @@ def probs_heatmap(probs, state_dict, output_dir='.', verbose=True):
     try: os.mkdir(output_dir)
     except OSError: pass
     
-    for (centroid_i, centroid) in enumerate(probs):
+    for (cluster_i, cluster) in enumerate(probs):
         
-        if verbose: print('Initializing map for centroid %d/%d...' % (centroid_i+1, len(probs)))
+        if verbose: print('Initializing map for cluster %d/%d...' % (cluster_i+1, len(probs)))
         fig = plt.figure()
         ax = fig.add_subplot(111)
         m = Basemap(width=12000000,
@@ -99,13 +99,20 @@ def probs_heatmap(probs, state_dict, output_dir='.', verbose=True):
         m.readshapefile('shapefiles/us', 'us', drawbounds=False)
         m.readshapefile('shapefiles/canada', 'canada', drawbounds=False)
         
-        if verbose: print('Mapping probabilities...')
-        for (abbr, prob) in centroid:
+        for (abbr, count, n_preds) in cluster:
+            
             region = state_dict[abbr]
+            # a few hacky fixes for regions
             if region == 'Newfoundland' or region == 'Labrador':
-                region = 'Newfoundland  & Labrador'  # yes with that extra space is how the shapefile has it
+                # ignore, no way to do this without regrouping the raw data as
+                # you'll have some in one but not the other and some in both
+                continue
             elif region == 'Qu\xe9bec':
                 region = 'Quebec'
+            elif region == 'Yukon':
+                region = 'Yukon Territory'
+            prob = count / float(n_preds)
+            
             for i in range(len(m.canada)):
                 if m.canada_info[i]['NAME'] == region:
                     (x, y) = zip(*m.canada[i])
@@ -115,8 +122,8 @@ def probs_heatmap(probs, state_dict, output_dir='.', verbose=True):
                     (x, y) = zip(*m.us[i])
                     plt.fill(x, y, color=(1-prob, 1-prob, 1))
         
-        ax.set_title('Centroid %d' % centroid_i)
-        filename = os.path.join(output_dir, 'centroid%d.png' % centroid_i)
+        ax.set_title('Cluster %d (n = %d)' % (cluster_i, cluster[0][2]))
+        filename = os.path.join(output_dir, 'cluster%d.png' % cluster_i)
         plt.savefig(filename)
         if verbose: print('Written to %s.' % filename)
         plt.close(fig)
