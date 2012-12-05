@@ -1,14 +1,27 @@
 from bs4 import BeautifulSoup
 from porterstemmer import PorterStemmer
 import datetime
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+import random
 import re
 import simplejson
+import sklearn.linear_model
+import sklearn.metrics
+import statsmodels.api as sm
 import sys
 import time
 import urllib2
 
 def parse_bechdel(url, verbose=False):
+    '''
+    Parses a page with a list of all Bechdel films, as listed on the Bechdel
+    movie list site: http://bechdeltest.com/sort/title?list=all
+    Returns a dictionary mapping films' IMDB ids to a dictionary of the form
+    { 'Bechdel_rating' : rating }. (More data gets added to this dictionary
+    by the function attach_imdb_info().)
+    '''
     
     if verbose:
         print('Processing Bechdel page...')
@@ -79,6 +92,11 @@ def parse_bechdel(url, verbose=False):
     return films
 
 def attach_imdb_info(films, verbose=False, throttle=0):
+    '''
+    Given a dictionary of film data such as that returned by parse_bechdel(), 
+    adds data available from IMDB using the HTTP-based OMDB API. Optional 
+    throttle parameter imposes a delay between queries. 
+    '''
     
     films_detailed = {}
     if verbose:
@@ -104,17 +122,39 @@ def attach_imdb_info(films, verbose=False, throttle=0):
         sys.stdout.flush()
     return films_detailed
 
-def level_booleans(levels_data, colname, sep=None, zeros_ones=False):
+def level_booleans(levels_data, colname, sep=None, zeros_ones=False, 
+                   skips=['', None]):
+    '''
+    Given a list/iterable of categorical data, returns a DataFrame of booleans
+    indicating whether each row belongs to each category. For example if the
+    input levels_data consists of ['a', 'b', 'a', 'c'], and the colname is 
+    'Label', the returned DataFrame will look like:
+    
+    Label_a   Label_b   Label_c
+    True      False     False
+    False     True      False
+    True      False     False
+    False     False     True
+    
+    You can add a separator sep (can be a regexp) if each row can contain more
+    than one label; for example, if levels_data was ['a,b', 'a,c'] and sep=','
+    and colname is 'Label', the returned DataFrame will look like:
+    
+    Label_a   Label_b   Label_c
+    True      True      False
+    True      False     True
+    
+    zeros_ones will cause the matrix to return 0 and 1 instead of False and 
+    True. Skips will indicate any labels to skip and not categorize. 
+    '''
     
     if sep is not None:
-        memberships = [set(x.split(sep)) for x in levels_data]
+        memberships = [set(re.split(sep, x)) for x in levels_data]
     else:
         memberships = [set([x]) for x in levels_data]
     levels = sorted(set(reduce(lambda x,y: x | y, memberships)))
-    try:
-        levels.remove('')
-    except:
-        pass
+    if len(skips) > 0:
+        levels = filter(lambda x: x not in skips, levels)
     colnames = ['%s_%s' % (colname, x) for x in levels]
     booleans = {}
     if zeros_ones is False:
@@ -126,6 +166,10 @@ def level_booleans(levels_data, colname, sep=None, zeros_ones=False):
     return pd.DataFrame(booleans)
 
 def rating_bucket(rating):
+    '''
+    Given a parental guidance rating, return a string classifying that it into 
+    a bucket. Combines ratings from different countries into a few buckets. 
+    '''
     
     if rating in ['G', '6', '7', 'Atp', 'K-3', 'TV-G']:
         return 'general'
@@ -144,9 +188,12 @@ def rating_bucket(rating):
         return None
 
 def generate_feature_csv(csv_out, csv_in='bechdel_full.csv', 
-                         female_words='female_words.txt',
-                         female_firstnames='female_firstnames.txt',
+                         female_word_file=None,
+                         female_name_file=None,
                          verbose=False):
+    '''
+    Given a csv file csv_in of features, 
+    '''
     
     if verbose:
         print('Generating basic features and booleans...')
@@ -215,60 +262,158 @@ def generate_feature_csv(csv_out, csv_in='bechdel_full.csv',
     # Porter-stemmed titles and plot summaries, and look for "female words" 
     # (like 'she', 'woman', etc.)
     
-    ps = PorterStemmer()
-    f = open(female_words, 'r')
-    female_stems = set([ps.stem(x.strip().lower(), 0, len(x.strip())-1) for x in f])
-    f.close()
-    has_female_word = []
-    for plot in raw_data['Title'] + ' ' + raw_data['Plot']:
-        if plot == 'N/A':
-            has_female_word.append(None)
-        else:
-            cur_has_female_word = 0
-            plot_clean = re.sub('[^\w\s]', ' ', plot).lower().strip()
-            plot_words = re.split('\s+', plot_clean)
-            plot_stems = [ps.stem(x, 0, len(x)-1) for x in plot_words]
-            for plot_stem in plot_stems:
-                if plot_stem in female_stems:
-                    cur_has_female_word = 1
-                    break
-            has_female_word.append(cur_has_female_word)
-    data['Female_word'] = has_female_word
-    
-    # Number of female names in the actor list: 0, 1, or 2+ (2+ will be
-    # anything not flagged as 0 or 1)
-    
-    f = open(female_firstnames, 'r')
-    female_nameset = set([x.strip().lower() for x in f])
-    f.close()
-    has_0_female_name = []
-    has_1_female_name = []
-    for actor_list in raw_data['Actors']:
-        if actor_list == 'N/A':
-            # again this issue only comes up twice
-            has_0_female_name.append(0)
-            has_1_female_name.append(0)
-        else:
-            actor_clean = re.sub('[^\w\s]', ' ', actor_list).lower().strip()
-            actor_names = re.split('\s+', actor_clean)
-            female_name_count = 0
-            for actor_name in actor_names:
-                if actor_name in female_nameset:
-                    female_name_count += 1
-            if female_name_count == 0:
-                has_0_female_name.append(1)
-                has_1_female_name.append(0)
-            elif female_name_count == 1:
-                has_0_female_name.append(0)
-                has_1_female_name.append(1)
+    if female_word_file is not None:
+        ps = PorterStemmer()
+        f = open(female_word_file, 'r')
+        female_stems = set([ps.stem(x.strip().lower(), 0, len(x.strip())-1) for x in f])
+        f.close()
+        has_female_word = []
+        for plot in raw_data['Title'] + ' ' + raw_data['Plot']:
+            if plot == 'N/A':
+                has_female_word.append(None)
             else:
+                cur_has_female_word = 0
+                plot_clean = re.sub('[^\w\s]', ' ', plot).lower().strip()
+                plot_words = re.split('\s+', plot_clean)
+                plot_stems = [ps.stem(x, 0, len(x)-1) for x in plot_words]
+                for plot_stem in plot_stems:
+                    if plot_stem in female_stems:
+                        cur_has_female_word = 1
+                        break
+                has_female_word.append(cur_has_female_word)
+        data['Female_word'] = has_female_word
+    
+    # Number of female names in the actor list: 0 or 1 (and anything not 
+    # flagged as either should be considered 2+)
+    
+    if female_name_file is not None:
+        f = open(female_name_file, 'r')
+        female_nameset = set([x.strip().lower() for x in f])
+        f.close()
+        has_0_female_name = []
+        has_1_female_name = []
+        for actor_list in raw_data['Actors']:
+            if actor_list == 'N/A':
+                # again this issue only comes up twice
                 has_0_female_name.append(0)
                 has_1_female_name.append(0)
-    data['Actress_0'] = has_0_female_name
-    data['Actress_1'] = has_1_female_name
+            else:
+                actor_clean = re.sub('[^\w\s]', ' ', actor_list).lower().strip()
+                actor_names = re.split('\s+', actor_clean)
+                female_name_count = 0
+                for actor_name in actor_names:
+                    if actor_name in female_nameset:
+                        female_name_count += 1
+                if female_name_count == 0:
+                    has_0_female_name.append(1)
+                    has_1_female_name.append(0)
+                elif female_name_count == 1:
+                    has_0_female_name.append(0)
+                    has_1_female_name.append(1)
+                else:
+                    has_0_female_name.append(0)
+                    has_1_female_name.append(0)
+        data['Actress_0'] = has_0_female_name
+        data['Actress_1'] = has_1_female_name
     
     data.to_csv(csv_out, index=False)
     
     if verbose:
         print('Feature generation complete, output to %s.' % csv_out)
 
+def logistic_prediction(features, response, xv_folds=10):
+    
+    indices = range(len(features))
+    random.shuffle(indices)
+    test_indices = []
+    train_indices = []
+    fold_size = int(len(features)/float(xv_folds))
+    for i in range(xv_folds-1):
+        test_indices.append(set(indices[i*fold_size : (i+1)*fold_size]))
+    test_indices.append(indices[(xv_folds-1)*fold_size : ])
+    
+    predictions = pd.Series([None] * len(features))
+    models = []
+    for test_index in test_indices:
+        train_index = set(indices) - set(test_index)
+        model = sklearn.linear_model.LogisticRegression(C=99999, fit_intercept=False) \
+                                    .fit(features.ix[train_index],
+                                         response.ix[train_index])
+        predictions.ix[test_index] = model.predict_proba(features.ix[test_index])[:,1]
+        # how you'd do it in statsmodels - commented out
+        # model = sm.Logit(features.ix[train_index], response.ix[train_index]).fit()
+        # predictions.ix[test_index] = model.predict(features.ix[test_index])
+        models.append(model)
+    
+    return (predictions, response, models)
+
+def bechdel_prediction(features_csv, auc_filename, xv_folds=10, 
+                       bootstrap_runs=0, verbose=False):
+    
+    if verbose:
+        print('Running logistic regression on %s, %d-fold cross-validation...' % \
+              (features_csv, xv_folds))
+    
+    features = pd.read_csv(features_csv)
+    response = features.pop('Bechdel_pass')
+    features.insert(0, 'const', 1)
+    
+    (prediction, response, models) = logistic_prediction(features, response, 
+                                                         xv_folds=xv_folds)
+    
+    # Some code borrowed straight from the matplotlib ROC example: 
+    # http://scikit-learn.org/stable/auto_examples/plot_roc.html
+    
+    (fpr, tpr, thresholds) = sklearn.metrics.roc_curve(response, prediction)
+    roc_auc = sklearn.metrics.auc(fpr, tpr)
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    ax.plot(fpr, tpr)
+    ax.plot([0,1], [0,1], 'k--')
+    ax.legend(['ROC curve (AUC = %6.4f)' % roc_auc], loc='lower right')
+    fig.savefig(auc_filename)
+    
+    if verbose:
+        print('AUC: %6.4f' % roc_auc)
+        print('AUC graph output to %s.' % auc_filename)
+    
+    # Separately, run a series of logistic_prediction calls and get some 
+    # bootstrapped parameters
+    
+    if bootstrap_runs > 0:
+        
+        if verbose:
+            print('Running bootstrap, %d iterations (%d runs)...' % \
+                  (bootstrap_runs, bootstrap_runs * xv_folds))
+        bootstrap_coefs = pd.DataFrame(index=range(xv_folds * bootstrap_runs),
+                                       columns=features.columns)
+        for i in range(bootstrap_runs):
+            if verbose:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+            cur_models = logistic_prediction(features, response, xv_folds=xv_folds)[2]
+            for (j, cur_model) in enumerate(cur_models):
+                bootstrap_coefs.ix[i*xv_folds + j] = cur_model.coef_[0]
+        if verbose: 
+            sys.stdout.write('\n')
+            sys.stdout.flush()
+        
+        significant_coefs = []
+        print('95% confidence levels on coefficients:')
+        for col in bootstrap_coefs.columns:
+            lower_bound = bootstrap_coefs[col].quantile(0.025)
+            upper_bound = bootstrap_coefs[col].quantile(0.975)
+            print('%s: (%.6f, %.6f)' % (col, lower_bound, upper_bound))
+            if (lower_bound < 0 and upper_bound < 0):
+                significant_coefs.append((col, '-'))
+            elif (lower_bound > 0 and upper_bound > 0):
+                significant_coefs.append((col, '+'))
+        
+        print('Significant coefficients:')
+        for (col, coef_sign) in significant_coefs:
+            print('%s: %s' % (col, coef_sign))
+        
+        return (prediction, response, bootstrap_coefs)
+    
+    else:
+        return (prediction, response)
