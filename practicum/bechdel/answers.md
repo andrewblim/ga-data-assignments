@@ -4,9 +4,9 @@ Andrew Lim / 5 Dec 2012
 
 ### To run everything
 
-Run `python run_bechdel.py`. 
+Run `python run_bechdel.py --all`. 
 
-If you've already run this and want to run it again without re-parsing the Bechdel page and re-running the OMDB queries, run `python run_bechdel.py --all-but-data`, which will assume you already have a file `bechdel_full.csv` to use. I also included a `bechdel_full.csv` in here which should work for this purpose, just in case the Bechdel website changes and breaks my code by the time you look at it. 
+If you want to run everything without re-parsing the Bechdel page and making the OMDB queries, run `python run_bechdel.py --all-but-data`, which will assume you already have a file `bechdel_full.csv` to use. I also included a `bechdel_full.csv` in here which should work for this purpose, just in case the Bechdel website changes and breaks my code by the time you look at it. 
 
 ### Problems 1-3
 
@@ -46,7 +46,9 @@ I included an indicator variable indicating whether or not the plot synopsis con
 
 #### Female names
 
-I included an indicator variable indicating the number of female names found amongst the actors. The female names are in `female_firstnames.txt` and are based off the top 500 entries in a list of the most popular female names in the US as of the 1990 census (1990 was just the first thing I found and should work fine). The file can be obtained [here](https://www.census.gov/genealogy/www/data/1990surnames/dist.female.first). I set the cutoff at 500 names somewhat arbitrarily, mainly to prevent bad false positives from mucking up the feature. Would you believe that the name "Michael" comes in at #799 and "John" is at #819? "Johnnie" is at #391 and I've decided just to live with that one. And of course there are some names that can go either way that will make this variable less effective than otherwise (sorry, Leslie Nielsen), but I suppose given names alone there's not a lot I can do short of a really long hand-check. 
+I included an indicator variable indicating the number of female names found amongst the actors. The female names are in `female_firstnames.txt` and are based off the top 500 entries in a list of the most popular female names in the US as of the 1990 census (1990 was just the first thing I found and should work fine). The file can be obtained [here](https://www.census.gov/genealogy/www/data/1990surnames/dist.female.first). 
+
+I set the cutoff at 500 names somewhat arbitrarily, mainly to prevent bad false positives from mucking up the feature. Would you believe that the name "Michael" comes in at #799 and "John" is at #819? "Johnnie" is at #391 and I've decided just to live with that one. And of course there are some names that can go either way that will make this variable less effective than otherwise (sorry, Leslie Nielsen), but I suppose given names alone there's not a lot I can do short of a really long hand-check. 
 
 ### Problems 5-6
 
@@ -65,15 +67,15 @@ Then a single run of 10 cross-validation folds is used to generate predictions. 
 
 Finally 100 logistic regressions are run, each with 10 randomized folds, so that 1000 values for each coefficient are generated. The program then outputs the 95% confidence intervals and the coefficients that were significant at the 95% threshold to `bootstrap.txt`. 
 
-I was pleased to see that among the indicator features, the ones I added were among the strongest in terms of magnitude, indicating significant impact on the probability that a film is Bechdel pass. They were in the expected direction. `Female_word` was easily the largest coefficient, around 0.68 on average in the bootstrap, indicating that female words in the plot synopsis strongly increase the likelihood that a film is Bechdel pass. `Actress_0` and `Actress_1` were negative, about -0.33 and -0.18 respectively, indicating that the presence of 0 or 1 female names only in the actors list (as opposed to 2+ female names) made Bechdel failure more likely. `Actress_0`, as expected, was larger in magnitude than `Actress_1`. 
+I was pleased to see that among the indicator features, the ones I added were among the strongest in terms of magnitude, indicating significant impact on the probability that a film passes the Bechdel test. `Female_word` was the coefficient with largest magnitude, around 0.68 on average in the bootstrap, indicating that female words in the plot synopsis strongly increase the likelihood that a film is Bechdel pass. `Actress_0` and `Actress_1` were negative, about -0.33 and -0.18 respectively, indicating that the presence of 0 or 1 female names only in the actors list (as opposed to the "baseline" 2+ female names) made Bechdel failure more likely. `Actress_0`, as expected, was larger in magnitude than `Actress_1`. 
 
-Among genres, there were some non-surprises: action, adventure, crime, and war films are less likely to pass, drama is more likely. Interestingly horror is also more likely, I suppose you have women talking about how to run away from the killer rather than the men in their lives. Also interestingly but not entirely surprisingly, romance is not significantly different from 0. Among parental guidance ratings, adult and teen films are more likely to pass, and the pre-MPAA rated films were less likely, which was interesting; I guess older films failed the test more often (this is corroborated by a significant and positive coefficient on the year). 
+Among genres, there were some non-surprises: action, adventure, crime, and war films are less likely to pass, drama is more likely. Interestingly horror is also more likely, I suppose in these films you have women talking about how to run away from the killer rather than about the men in their lives. Also interestingly but not entirely surprisingly, romance is not a significant predictor. Among parental guidance ratings, adult and teen films are more likely to pass, and the pre-MPAA rated films were less likely, which was interesting; I guess older films failed the test more often (this is corroborated by a significant and positive coefficient on the year). 
 
 ### Problem 7
 
 Run `python run_bechdel.py --reduced-prediction`. It reduces the features greatly, outputs them to `features_reduced.csv`, and then runs the same analysis over again. 
 
-Rather than adding more features, I took away features to see how efficiently the model could still perform. At first I was going to chop everything but the coefficients that the bootstrap found to be significant. But I found that reducing it even further to just the lexical features I added produced a very comparable average ROC AUC, typicall worse only by about 0.005. There are only three predictive features in this prediction: `Actress_0`, `Actress_1`, and `Female_word`. I also use a constant term again. 
+Rather than adding more features, I took away features to see how efficiently the model could still perform. At first I was going to chop everything but the coefficients that the bootstrap found to be significant. But I found that reducing it even further to just the lexical features I added produced a very comparable average ROC AUC, typically worse only by about 0.005. There are only three predictive features in this prediction: `Actress_0`, `Actress_1`, and `Female_word`. I also use a constant term again. 
 
 Output files (no genre corr matrix since no genres are used)
 
@@ -82,3 +84,31 @@ Output files (no genre corr matrix since no genres are used)
 - `bootstrap_reduced.txt`
 
 ### pip freeze
+
+    Jinja2==2.6
+    PyYAML==3.10
+    Pygments==1.5
+    Sphinx==1.1.3
+    basemap==1.0.5
+    beautifulsoup4==4.1.3
+    boto==2.6.0
+    distribute==0.6.28
+    docutils==0.9.1
+    ipython==0.13.1
+    matplotlib==1.1.1
+    mrjob==0.3.5
+    nose==1.2.1
+    numpy==1.6.2
+    pandas==0.9.0
+    patsy==0.1.0
+    python-dateutil==2.1
+    pytz==2012h
+    pyzmq==2.2.0.1
+    rpy2==2.3.0beta1
+    scikit-learn==0.12.1
+    scipy==0.11.0
+    simplejson==2.6.2
+    six==1.2.0
+    statsmodels==0.5.0
+    tornado==2.4
+    wsgiref==0.1.2
