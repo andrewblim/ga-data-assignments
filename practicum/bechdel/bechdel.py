@@ -361,8 +361,8 @@ def matrix_heatmap(df, filename, labels=None):
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     img = ax.pcolor(df[::-1])
-    ax.set_xticks(np.arange(25)+0.5)
-    ax.set_yticks(np.arange(25)+0.5)
+    ax.set_xticks(np.arange(len(df))+0.5)
+    ax.set_yticks(np.arange(len(df))+0.5)
     if labels is None:
         try:
             labels = df.columns
@@ -427,6 +427,15 @@ def graph_precision_recall_curve(response, prediction, filename, verbose=False):
 def bechdel_prediction(features_csv, genre_corr_filename, roc_filename, 
                        prec_recall_filename, bootstrap_filename, xv_folds=10, 
                        bootstrap_runs=0, verbose=False):
+    '''
+    The main "workhorse" function for prediction and analysis of the Bechdel
+    data. Generates a correlation of genres if applicable, predicts once with
+    a specified number of cross-validation folds, runs ROC and precision-
+    recall analysis, then re-runs the fit many times and gives bootstrap-
+    based confidence intervals for the coefficients. Uses logistic regression
+    as implemented in scikit-learn. 
+    '''
+    
     
     if verbose:
         print('Running logistic regression on %s, %d-fold cross-validation...' % \
@@ -442,9 +451,14 @@ def bechdel_prediction(features_csv, genre_corr_filename, roc_filename,
         print('Generating genre corr heatmap to %s...' % genre_corr_filename)
     
     genre_cols = filter(lambda col: col[0:6] == 'Genre_', features.columns)
-    genre_cleanlabels = map(lambda col: col[6:], genre_cols)
-    genre_corr = features[genre_cols].corr()
-    matrix_heatmap(genre_corr, genre_corr_filename, labels=genre_cleanlabels)
+    if len(genre_cols) > 0:
+        genre_cleanlabels = map(lambda col: col[6:], genre_cols)
+        genre_corr = features[genre_cols].corr()
+        matrix_heatmap(genre_corr, genre_corr_filename, labels=genre_cleanlabels)
+    else:
+        print('No genre columns found, genre corr heatmap not generated.')
+    
+    # Run the prediction once
     
     (prediction, models) = logistic_prediction(features, response, xv_folds=xv_folds)
     
@@ -463,16 +477,23 @@ def bechdel_prediction(features_csv, genre_corr_filename, roc_filename,
                   (bootstrap_runs, bootstrap_runs * xv_folds))
         bootstrap_coefs = pd.DataFrame(index=range(xv_folds * bootstrap_runs),
                                        columns=features.columns)
+        aucs = []
         for i in range(bootstrap_runs):
             if verbose:
                 sys.stdout.write('.')
                 sys.stdout.flush()
-            cur_models = logistic_prediction(features, response, xv_folds=xv_folds)[1]
+            (cur_prediction, cur_models) = logistic_prediction(features, response, xv_folds=xv_folds)
+            (fpr, tpr, thresholds) = sklearn.metrics.roc_curve(response, cur_prediction)
+            aucs.append(sklearn.metrics.auc(fpr, tpr))
             for (j, cur_model) in enumerate(cur_models):
                 bootstrap_coefs.ix[i*xv_folds + j] = cur_model.coef_[0]
         if verbose: 
             sys.stdout.write('\n')
             sys.stdout.flush()
+        
+        avg_auc = sum(aucs) / float(bootstrap_runs)
+        if verbose:
+            print('Average AUC: %0.6f' % avg_auc)
         
         f = open(bootstrap_filename, 'w')
         significant_coefs = []
@@ -488,6 +509,9 @@ def bechdel_prediction(features_csv, genre_corr_filename, roc_filename,
         f.write('\nSignificant coefficients and their average values:\n')
         for col in significant_coefs:
             f.write('%20s: %.6f\n' % (col, bootstrap_coefs[col].mean()))
+        
+        f.write('\nAverage AUC: %0.6f\n' % avg_auc)
+        
         f.close()
         
         if verbose:
@@ -496,13 +520,11 @@ def bechdel_prediction(features_csv, genre_corr_filename, roc_filename,
     return (prediction, response)
 
 def reduce_features(features_csv, reduced_features_csv):
+    '''
+    Reduces the features of the Bechdel data to only a few important columns.
+    '''
     
     features = pd.read_csv(features_csv)
-    keep_cols = ['Bechdel_pass', 'Year', 'imdbRating', 'imdbVotes', 'Runtime',
-                 'Runtime_na', 'Female_word', 'Actress_0', 'Actress_1', 
-                 'Genre_Action', 'Genre_Adventure', 'Genre_Crime',
-                 'Genre_Drama', 'Genre_Horror', 'Genre_Thriller', 
-                 'Genre_War', 'Rating_pre_mpaa']
-    
-    reduced_features = features[keep_cols]
-    reduced_features['Rating_notkids'] = [1 if x else 0 for x in features['']]
+    keep_cols = ['Bechdel_pass', 'Female_word', 'Actress_0', 'Actress_1']
+    reduced_features = features[keep_cols]    
+    reduced_features.to_csv(reduced_features_csv, index=None)

@@ -46,15 +46,22 @@ I included an indicator variable indicating whether or not the plot synopsis con
 
 #### Female names
 
-I included an indicator variable indicating the number of female names found amongst the actors. The female names are in `female_firstnames.txt` and are based off the top 500 entries in `female_census.txt`, a list of the most popular female names in the US as of the 1990 census. The file can be obtained [here](https://www.census.gov/genealogy/www/data/1990surnames/dist.female.first). I set the cutoff at 500 names somewhat arbitrarily, mainly to prevent bad false positives from mucking up the feature. Would you believe that the name "Michael" comes in at #799 and "John" is at #819? "Johnnie" is at #391 and I've decided just to live with that one. And of course there are some names that can go either way that will make this variable less effective than otherwise (sorry, Leslie Nielsen), but I suppose given names alone there's not a lot I can do short of a really long hand-check. 
+I included an indicator variable indicating the number of female names found amongst the actors. The female names are in `female_firstnames.txt` and are based off the top 500 entries in a list of the most popular female names in the US as of the 1990 census (1990 was just the first thing I found and should work fine). The file can be obtained [here](https://www.census.gov/genealogy/www/data/1990surnames/dist.female.first). I set the cutoff at 500 names somewhat arbitrarily, mainly to prevent bad false positives from mucking up the feature. Would you believe that the name "Michael" comes in at #799 and "John" is at #819? "Johnnie" is at #391 and I've decided just to live with that one. And of course there are some names that can go either way that will make this variable less effective than otherwise (sorry, Leslie Nielsen), but I suppose given names alone there's not a lot I can do short of a really long hand-check. 
 
 ### Problems 5-6
 
 Run `python run_bechdel.py --prediction` to run prediction and analysis based on the data in `features.csv`. This runs a logistic regression with a constant term included. 
 
+Output files: 
+
+- `genre_corr.png`
+- `roc.png`
+- `precision_recall.png`
+- `bootstrap.txt`
+
 First `features.csv` is read in and an image `genre_corr.png` is generated showing the correlations between the different genre labels. This is more of a sanity check to see whether any of the genres overlap too much (they don't - the closest thing to a problem is that "Animation" and "Family" have a corr in the 0.50s). 
 
-Then a single run of 10 cross-validation folds is used to generate predictions. These will in turn generate an ROC graph, which is output to `roc.png`, and a precision-recall graph, which is output to `precision_recall.png`. The AUCs I've seen on the ROC curve have fallen in the 0.69 - 0.74 range. 
+Then a single run of 10 cross-validation folds is used to generate predictions. These will in turn generate an ROC graph, which is output to `roc.png`, and a precision-recall graph, which is output to `precision_recall.png`. The AUCs I've seen on the ROC curve have fallen in the 0.69 - 0.75 range, with an average of 0.72. 
 
 Finally 100 logistic regressions are run, each with 10 randomized folds, so that 1000 values for each coefficient are generated. The program then outputs the 95% confidence intervals and the coefficients that were significant at the 95% threshold to `bootstrap.txt`. 
 
@@ -64,6 +71,14 @@ Among genres, there were some non-surprises: action, adventure, crime, and war f
 
 ### Problem 7
 
-Rather than adding more features, I am in fact going to take away some features to see how efficiently the model can still perform. 
+Run `python run_bechdel.py --reduced-prediction`. It reduces the features greatly, outputs them to `features_reduced.csv`, and then runs the same analysis over again. 
+
+Rather than adding more features, I took away features to see how efficiently the model could still perform. At first I was going to chop everything but the coefficients that the bootstrap found to be significant. But I found that reducing it even further to just the lexical features I added produced a very comparable average ROC AUC, typicall worse only by about 0.005. There are only three predictive features in this prediction: `Actress_0`, `Actress_1`, and `Female_word`. I also use a constant term again. 
+
+Output files (no genre corr matrix since no genres are used)
+
+- `roc_reduced.png`
+- `precision_recall_reduced.png`
+- `bootstrap_reduced.txt`
 
 ### pip freeze
