@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from matplotlib.collections import RegularPolyCollection
 from porterstemmer import PorterStemmer
 import datetime
 import matplotlib.pyplot as plt
@@ -188,8 +189,8 @@ def rating_bucket(rating):
         return None
 
 def generate_feature_csv(csv_out, csv_in='bechdel_full.csv', 
-                         female_word_file=None,
-                         female_name_file=None,
+                         female_word_filename=None,
+                         female_name_filename=None,
                          verbose=False):
     '''
     Given a csv file csv_in of features, 
@@ -262,9 +263,9 @@ def generate_feature_csv(csv_out, csv_in='bechdel_full.csv',
     # Porter-stemmed titles and plot summaries, and look for "female words" 
     # (like 'she', 'woman', etc.)
     
-    if female_word_file is not None:
+    if female_word_filename is not None:
         ps = PorterStemmer()
-        f = open(female_word_file, 'r')
+        f = open(female_word_filename, 'r')
         female_stems = set([ps.stem(x.strip().lower(), 0, len(x.strip())-1) for x in f])
         f.close()
         has_female_word = []
@@ -286,8 +287,8 @@ def generate_feature_csv(csv_out, csv_in='bechdel_full.csv',
     # Number of female names in the actor list: 0 or 1 (and anything not 
     # flagged as either should be considered 2+)
     
-    if female_name_file is not None:
-        f = open(female_name_file, 'r')
+    if female_name_filename is not None:
+        f = open(female_name_filename, 'r')
         female_nameset = set([x.strip().lower() for x in f])
         f.close()
         has_0_female_name = []
@@ -322,6 +323,11 @@ def generate_feature_csv(csv_out, csv_in='bechdel_full.csv',
         print('Feature generation complete, output to %s.' % csv_out)
 
 def logistic_prediction(features, response, xv_folds=10):
+    '''
+    Given a set of features and a response variable, runs k-fold cross-
+    validated logistic regression and returns predictions and an array of 
+    models (of length k, one per fold). 
+    '''
     
     indices = range(len(features))
     random.shuffle(indices)
@@ -345,9 +351,81 @@ def logistic_prediction(features, response, xv_folds=10):
         # predictions.ix[test_index] = model.predict(features.ix[test_index])
         models.append(model)
     
-    return (predictions, response, models)
+    return (predictions, models)
 
-def bechdel_prediction(features_csv, auc_filename, xv_folds=10, 
+def matrix_heatmap(df, filename, labels=None):
+    '''
+    Generates a heatmap of the given matrix/dataframe with the provided labels.
+    '''
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    img = ax.pcolor(df[::-1])
+    ax.set_xticks(np.arange(25)+0.5)
+    ax.set_yticks(np.arange(25)+0.5)
+    if labels is None:
+        try:
+            labels = df.columns
+        except:
+            labels = range(len(df))
+    ax.set_xticklabels(labels, size='xx-small', rotation='vertical')
+    ax.set_yticklabels(labels[::-1], size='xx-small')
+    ax.set_title('Genre correlations')
+    fig.colorbar(img)
+    fig.savefig(filename)
+    plt.close(fig)
+
+def graph_roc_curve(response, prediction, filename, verbose=False):
+    '''
+    Generates an ROC graph. 
+    '''
+    
+    # Some code borrowed straight from the matplotlib ROC example: 
+    # http://scikit-learn.org/stable/auto_examples/plot_roc.html
+    
+    if verbose:
+        print('Generating ROC curve...')
+        
+    (fpr, tpr, thresholds) = sklearn.metrics.roc_curve(response, prediction)
+    roc_auc = sklearn.metrics.auc(fpr, tpr)
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    ax.plot(fpr, tpr)
+    ax.plot([0,1], [0,1], 'k--')  # 45 degree line
+    ax.set_xlabel('False positive rate')
+    ax.set_ylabel('True positive rate')
+    ax.set_title('ROC curve for Bechdel test')
+    ax.legend(['AUC = %6.4f' % roc_auc], loc='lower right')
+    fig.savefig(filename)
+    plt.close(fig)
+    
+    if verbose:
+        print('AUC of ROC: %6.4f' % roc_auc)
+        print('ROC graph output to %s.' % filename)
+
+def graph_precision_recall_curve(response, prediction, filename, verbose=False):
+    '''
+    Generates a precision-recall scatterplot. 
+    '''
+    
+    if verbose:
+        print('Generating precision-recall curve...')
+    
+    (precision, recall, thresholds) = sklearn.metrics.precision_recall_curve(response, prediction)
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    ax.scatter(precision, recall, marker='o', color='blue', s=4)
+    ax.set_xlabel('Precision')
+    ax.set_ylabel('Recall')
+    ax.set_title('Precision-recall curve for Bechdel test')
+    fig.savefig(filename)
+    plt.close(fig)
+    
+    if verbose:
+        print('Precision-recall graph output to %s.' % filename)
+
+def bechdel_prediction(features_csv, genre_corr_filename, roc_filename, 
+                       prec_recall_filename, bootstrap_filename, xv_folds=10, 
                        bootstrap_runs=0, verbose=False):
     
     if verbose:
@@ -358,24 +436,22 @@ def bechdel_prediction(features_csv, auc_filename, xv_folds=10,
     response = features.pop('Bechdel_pass')
     features.insert(0, 'const', 1)
     
-    (prediction, response, models) = logistic_prediction(features, response, 
-                                                         xv_folds=xv_folds)
-    
-    # Some code borrowed straight from the matplotlib ROC example: 
-    # http://scikit-learn.org/stable/auto_examples/plot_roc.html
-    
-    (fpr, tpr, thresholds) = sklearn.metrics.roc_curve(response, prediction)
-    roc_auc = sklearn.metrics.auc(fpr, tpr)
-    fig = plt.figure()
-    ax = fig.add_subplot(1,1,1)
-    ax.plot(fpr, tpr)
-    ax.plot([0,1], [0,1], 'k--')
-    ax.legend(['ROC curve (AUC = %6.4f)' % roc_auc], loc='lower right')
-    fig.savefig(auc_filename)
+    # Genre covariance
     
     if verbose:
-        print('AUC: %6.4f' % roc_auc)
-        print('AUC graph output to %s.' % auc_filename)
+        print('Generating genre corr heatmap to %s...' % genre_corr_filename)
+    
+    genre_cols = filter(lambda col: col[0:6] == 'Genre_', features.columns)
+    genre_cleanlabels = map(lambda col: col[6:], genre_cols)
+    genre_corr = features[genre_cols].corr()
+    matrix_heatmap(genre_corr, genre_corr_filename, labels=genre_cleanlabels)
+    
+    (prediction, models) = logistic_prediction(features, response, xv_folds=xv_folds)
+    
+    # ROC curve and precision-recall curve
+    
+    graph_roc_curve(response, prediction, roc_filename, verbose=verbose)
+    graph_precision_recall_curve(response, prediction, prec_recall_filename, verbose=verbose)
     
     # Separately, run a series of logistic_prediction calls and get some 
     # bootstrapped parameters
@@ -391,29 +467,42 @@ def bechdel_prediction(features_csv, auc_filename, xv_folds=10,
             if verbose:
                 sys.stdout.write('.')
                 sys.stdout.flush()
-            cur_models = logistic_prediction(features, response, xv_folds=xv_folds)[2]
+            cur_models = logistic_prediction(features, response, xv_folds=xv_folds)[1]
             for (j, cur_model) in enumerate(cur_models):
                 bootstrap_coefs.ix[i*xv_folds + j] = cur_model.coef_[0]
         if verbose: 
             sys.stdout.write('\n')
             sys.stdout.flush()
         
+        f = open(bootstrap_filename, 'w')
         significant_coefs = []
-        print('95% confidence levels on coefficients:')
+        f.write('95% confidence levels on coefficients:\n')
         for col in bootstrap_coefs.columns:
             lower_bound = bootstrap_coefs[col].quantile(0.025)
             upper_bound = bootstrap_coefs[col].quantile(0.975)
-            print('%s: (%.6f, %.6f)' % (col, lower_bound, upper_bound))
-            if (lower_bound < 0 and upper_bound < 0):
-                significant_coefs.append((col, '-'))
-            elif (lower_bound > 0 and upper_bound > 0):
-                significant_coefs.append((col, '+'))
+            f.write('%20s: (%.6f, %.6f)\n' % (col, lower_bound, upper_bound))
+            if (lower_bound < 0 and upper_bound < 0) or \
+               (lower_bound > 0 and upper_bound > 0):
+                significant_coefs.append(col)
         
-        print('Significant coefficients:')
-        for (col, coef_sign) in significant_coefs:
-            print('%s: %s' % (col, coef_sign))
+        f.write('\nSignificant coefficients and their average values:\n')
+        for col in significant_coefs:
+            f.write('%20s: %.6f\n' % (col, bootstrap_coefs[col].mean()))
+        f.close()
         
-        return (prediction, response, bootstrap_coefs)
+        if verbose:
+            print('Bootstrapping complete, results written to %s.' % bootstrap_filename)
+
+    return (prediction, response)
+
+def reduce_features(features_csv, reduced_features_csv):
     
-    else:
-        return (prediction, response)
+    features = pd.read_csv(features_csv)
+    keep_cols = ['Bechdel_pass', 'Year', 'imdbRating', 'imdbVotes', 'Runtime',
+                 'Runtime_na', 'Female_word', 'Actress_0', 'Actress_1', 
+                 'Genre_Action', 'Genre_Adventure', 'Genre_Crime',
+                 'Genre_Drama', 'Genre_Horror', 'Genre_Thriller', 
+                 'Genre_War', 'Rating_pre_mpaa']
+    
+    reduced_features = features[keep_cols]
+    reduced_features['Rating_notkids'] = [1 if x else 0 for x in features['']]

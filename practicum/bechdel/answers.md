@@ -1,12 +1,12 @@
 # Bechdel Test
 
-Andrew Lim / 27 Nov 2012
+Andrew Lim / 5 Dec 2012
 
 ### To run everything
 
 Run `python run_bechdel.py`. 
 
-If you've already run this and want to run it again without re-parsing the Bechdel page and re-running the OMDB queries, run `python run_bechdel.py --no-data`, which will assume you already have a file `bechdel_full.csv` to use. 
+If you've already run this and want to run it again without re-parsing the Bechdel page and re-running the OMDB queries, run `python run_bechdel.py --all-but-data`, which will assume you already have a file `bechdel_full.csv` to use. I also included a `bechdel_full.csv` in here which should work for this purpose, just in case the Bechdel website changes and breaks my code by the time you look at it. 
 
 ### Problems 1-3
 
@@ -52,6 +52,18 @@ I included an indicator variable indicating the number of female names found amo
 
 Run `python run_bechdel.py --prediction` to run prediction and analysis based on the data in `features.csv`. This runs a logistic regression with a constant term included. 
 
-First a single run of 10 cross-validation folds is used to generate an AUC graph, which is output to `auc.png`. The AUCs I've seen typically fell in the 0.7 - 0.72 range. Then 100 logistic regressions are run, each with 10 randomized folds, so that 1000 values for each coefficient are generated. The program then outputs the 95% confidence intervals and the coefficients that were significant at the 95% threshold to stdout. 
+First `features.csv` is read in and an image `genre_corr.png` is generated showing the correlations between the different genre labels. This is more of a sanity check to see whether any of the genres overlap too much (they don't - the closest thing to a problem is that "Animation" and "Family" have a corr in the 0.50s). 
+
+Then a single run of 10 cross-validation folds is used to generate predictions. These will in turn generate an ROC graph, which is output to `roc.png`, and a precision-recall graph, which is output to `precision_recall.png`. The AUCs I've seen on the ROC curve have fallen in the 0.69 - 0.74 range. 
+
+Finally 100 logistic regressions are run, each with 10 randomized folds, so that 1000 values for each coefficient are generated. The program then outputs the 95% confidence intervals and the coefficients that were significant at the 95% threshold to `bootstrap.txt`. 
+
+I was pleased to see that among the indicator features, the ones I added were among the strongest in terms of magnitude, indicating significant impact on the probability that a film is Bechdel pass. They were in the expected direction. `Female_word` was easily the largest coefficient, around 0.68 on average in the bootstrap, indicating that female words in the plot synopsis strongly increase the likelihood that a film is Bechdel pass. `Actress_0` and `Actress_1` were negative, about -0.33 and -0.18 respectively, indicating that the presence of 0 or 1 female names only in the actors list (as opposed to 2+ female names) made Bechdel failure more likely. `Actress_0`, as expected, was larger in magnitude than `Actress_1`. 
+
+Among genres, there were some non-surprises: action, adventure, crime, and war films are less likely to pass, drama is more likely. Interestingly horror is also more likely, I suppose you have women talking about how to run away from the killer rather than the men in their lives. Also interestingly but not entirely surprisingly, romance is not significantly different from 0. Among parental guidance ratings, adult and teen films are more likely to pass, and the pre-MPAA rated films were less likely, which was interesting; I guess older films failed the test more often (this is corroborated by a significant and positive coefficient on the year). 
+
+### Problem 7
+
+Rather than adding more features, I am in fact going to take away some features to see how efficiently the model can still perform. 
 
 ### pip freeze
